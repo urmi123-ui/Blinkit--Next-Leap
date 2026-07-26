@@ -1,0 +1,385 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "c699637e-fd3d-4170-9fef-1093794d0552",
+      "name": "When clicking ‘Execute workflow’",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -864,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "queryString": "blinkit_reviews_batch_6",
+        "filter": {},
+        "options": {}
+      },
+      "id": "110785f2-1271-440d-a48e-9be540cfa91a",
+      "name": "Search files and folders",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -640,
+        -80
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "tUodhyWbrMHE3e3O",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "1AXC2xiBCwjIve1y8bEW-aqcnOxCcXj_b",
+          "mode": "list",
+          "cachedResultName": "blinkit_reviews_batch_6.csv",
+          "cachedResultUrl": "https://drive.google.com/file/d/1AXC2xiBCwjIve1y8bEW-aqcnOxCcXj_b/view?usp=drivesdk"
+        },
+        "options": {}
+      },
+      "id": "057eb7be-3e4d-4762-93eb-fc97f85675fa",
+      "name": "Download file",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -416,
+        -80
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "tUodhyWbrMHE3e3O",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "8dc1f71f-dc05-40f9-bd69-78fcb6138148",
+      "name": "Extract from File",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        -192,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const cleaned = [];\n\nfor (const item of $input.all()) {\n\n  let text = item.json.text || \"\";\n\n  // Remove HTML tags\n  text = text.replace(/<[^>]*>/g, \"\");\n\n  // Remove emojis\n  text = text.replace(/[\\u{1F300}-\\u{1FAFF}\\u{2600}-\\u{27BF}]/gu, \"\");\n\n  // Remove extra spaces\n  text = text.replace(/\\s+/g, \" \").trim();\n\n  cleaned.push({\n    json: {\n      ...item.json,\n      text: text\n    }\n  });\n\n}\n\nreturn cleaned;"
+      },
+      "id": "daf450c9-97fb-405b-9f00-97a37e9a3e8d",
+      "name": "Code in JavaScript",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        32,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const reviews = items.map((item, index) => `Review ${index + 1}:\\n${item.json.text}`);\nconst prompt = reviews.join(\"\\n\\n\");\nconst instructions = `\n\nFor each review, return ONLY a valid JSON array.\n\nEach object MUST follow this schema:\n\n[\n  {\n    \"problem\":\"\",\n    \"pain_point\":\"\",\n    \"product_area\":\"\",\n    \"shopping_goal\":\"\",\n    \"barrier_to_new_category\":\"\",\n    \"user_persona\":\"\",\n    \"emotion\":\"\",\n    \"frequency\":\"Recurring/Occasional\",\n    \"priority\":\"\",\n    \"recommended_action\":\"\"\n  }\n]\n\nDefinitions:\n\n- problem: What is the user's main issue?\n- pain_point: Why is it frustrating?\n- product_area: Delivery, Search, Pricing, Catalog, Recommendation, App Experience, Payments, Support, Other\n- shopping_goal: What was the user trying to accomplish?\n- barrier_to_new_category: What prevents the user from trying new categories?\n- user_persona: Busy Professional, Student, Parent, Health-conscious, Budget Shopper, Pet Owner, etc.\n- emotion: Happy, Frustrated, Confused, Excited, Disappointed, Neutral\n- frequency: Recurring or Occasional\n- priority: High, Medium, Low\n- recommended_action: Product improvement recommendation\n\nReturn ONLY valid JSON.\n`;\nreturn [{\n  json: {\n    body: {\n      model: \"llama-3.3-70b-versatile\",\n      messages: [\n        { role: \"system\", content: \"You are a Senior Product Manager. Analyze customer reviews and return ONLY valid JSON.\" },\n        { role: \"user\", content: prompt + instructions }\n      ],\n      temperature: 0.2\n    }\n  }\n}];"
+      },
+      "id": "6bbd1edd-e0fe-424a-bcc5-33e19ce77587",
+      "name": "Code in JavaScript2",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "groqApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {}
+      },
+      "id": "a5050986-e4d8-41be-be77-6065c2ea214d",
+      "name": "HTTP Request1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        704,
+        -160
+      ],
+      "retryOnFail": true,
+      "credentials": {
+        "groqApi": {
+          "id": "Uc36vUG284d7czdH",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => ({\n  json: {\n    analysis: item.json.choices[0].message.content\n  }\n}));"
+      },
+      "id": "bb469e8d-1bf1-4b2c-a5e9-6dc32d7ebc29",
+      "name": "Extract Analysis",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        928,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const FALLBACK = {\n  problem: \"\",\n  pain_point: \"\",\n  product_area: \"Other\",\n  shopping_goal: \"\",\n  barrier_to_new_category: \"\",\n  user_persona: \"\",\n  emotion: \"\",\n  frequency: \"Occasional\",\n  priority: \"Low\",\n  recommended_action: \"\"\n};\n\nconst clean = (obj) => ({\n  problem: obj.problem ?? \"\",\n  pain_point: obj.pain_point ?? \"\",\n  product_area: obj.product_area ?? \"Other\",\n  shopping_goal: obj.shopping_goal ?? \"\",\n  barrier_to_new_category: obj.barrier_to_new_category ?? \"\",\n  user_persona: obj.user_persona ?? \"\",\n  emotion: obj.emotion ?? \"\",\n  frequency: obj.frequency ?? \"Occasional\",\n  priority: obj.priority ?? \"Low\",\n  recommended_action: obj.recommended_action ?? \"\"\n});\n\n// Source reviews for the current batch (to attach review_id + review text)\nconst sourceItems = $(\"Loop Over Items\").all();\nconst batchOffset = $runIndex * (sourceItems.length || 0);\n\nconst out = [];\n\nfor (const item of $input.all()) {\n  let raw = item.json.analysis ?? \"\";\n\n  // Remove ```json or ``` wrappers if present\n  raw = String(raw).trim()\n    .replace(/^```(?:json)?\\s*/i, \"\")\n    .replace(/\\s*```$/i, \"\")\n    .trim();\n\n  let analyses;\n  try {\n    const parsed = JSON.parse(raw);\n    analyses = (Array.isArray(parsed) ? parsed : [parsed]).map(o => clean(o || {}));\n  } catch (e) {\n    // One fallback per source review in the batch\n    analyses = sourceItems.map(() => ({ ...FALLBACK }));\n  }\n\n  for (let i = 0; i < analyses.length; i++) {\n    const src = sourceItems[i] ? sourceItems[i].json : {};\n    out.push({\n      json: {\n        review_id: batchOffset + i + 1,\n        review: src.text ?? \"\",\n        ...analyses[i]\n      }\n    });\n  }\n}\n\nreturn out;"
+      },
+      "id": "b8742433-547f-446e-8370-a35bb6b4c895",
+      "name": "Parse Analysis",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1152,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1YwJn9VPKkCqSptjgvhTtcUnLuCEaUyHu-ZlEw4FZ6bI",
+          "mode": "list",
+          "cachedResultName": "AI_Discovery_Engine_Reviewsreview_id",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1YwJn9VPKkCqSptjgvhTtcUnLuCEaUyHu-ZlEw4FZ6bI/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 173606786,
+          "mode": "list",
+          "cachedResultName": "Sheet6",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1YwJn9VPKkCqSptjgvhTtcUnLuCEaUyHu-ZlEw4FZ6bI/edit#gid=173606786"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "c2274555-d0ee-44a7-900e-1d43324fa057",
+      "name": "Save to Google Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1376,
+        -160
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "zpx3gnblskJWLfKv",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 20
+      },
+      "id": "93cc1e7b-2e4c-4ecf-bbc0-6e515f29e138",
+      "name": "Wait Between Batches",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1600,
+        -80
+      ],
+      "webhookId": "71b97576-9075-4f12-9702-9e1e59b9736d"
+    },
+    {
+      "parameters": {
+        "batchSize": 20,
+        "options": {}
+      },
+      "id": "3a566cac-f5d2-477c-b9fe-2e3fc6663610",
+      "name": "Loop Over Items",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        256,
+        -80
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Search files and folders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search files and folders": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Extract Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Analysis": {
+      "main": [
+        [
+          {
+            "node": "Parse Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Analysis": {
+      "main": [
+        [
+          {
+            "node": "Save to Google Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to Google Sheet": {
+      "main": [
+        [
+          {
+            "node": "Wait Between Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Between Batches": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "b5be8c02-1163-4a8a-8e3f-716ab07c6b24",
+  "meta": {
+    "instanceId": "b820600ef49b1bbcdb412cf3720ae77df0e57acea0c73422ce8a904e9bc88a28"
+  },
+  "nodeGroups": [],
+  "id": "A9MXMNJao1RYPCxU",
+  "tags": []
+}
