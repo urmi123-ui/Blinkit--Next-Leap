@@ -13,7 +13,7 @@ import os
 import sqlite3
 import json
 from dotenv import load_dotenv
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 from schemas import QueryRequest, InsightResponse, ReviewRecord, SyncRequest
 import database
