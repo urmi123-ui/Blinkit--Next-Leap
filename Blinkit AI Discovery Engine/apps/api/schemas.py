@@ -1,6 +1,9 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 
+class SyncRequest(BaseModel):
+    spreadsheet_id: Optional[str] = Field(None, description="Optional Google Sheet ID or URL")
+
 class ReviewRecord(BaseModel):
     review_id: str = Field(..., description="Stable row identifier (sheet row id or hash)")
     review: str = Field(..., description="Primary review text content")

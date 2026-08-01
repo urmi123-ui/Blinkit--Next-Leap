@@ -15,7 +15,7 @@ import json
 from dotenv import load_dotenv
 from typing import List, Dict, Any
 
-from schemas import QueryRequest, InsightResponse, ReviewRecord
+from schemas import QueryRequest, InsightResponse, ReviewRecord, SyncRequest
 import database
 import sync_worker
 import indexer
@@ -173,14 +173,15 @@ def health_check():
 
 
 @app.post("/sync", status_code=202)
-def sync_sheet():
+def sync_sheet(req: Optional[SyncRequest] = None):
     """
     Incremental sync: fetches the Google Sheet and upserts only rows whose
     content has changed (detected via SHA-256 hash). Unchanged rows are skipped.
     Triggers vector re-indexing only if new or changed rows were written.
     """
     try:
-        res = sync_worker.run_sync()
+        sheet_id = req.spreadsheet_id if req else None
+        res = sync_worker.run_sync(spreadsheet_id=sheet_id)
         return res
     except Exception as e:
         raise HTTPException(
@@ -190,13 +191,14 @@ def sync_sheet():
 
 
 @app.post("/sync/rebuild", status_code=202)
-def rebuild_index():
+def rebuild_index(req: Optional[SyncRequest] = None):
     """
     Phase 6 — Full rebuild: drops the existing vector index and performs
     a complete re-sync + re-index from scratch. Use when the schema changes
     or after data corrections in the Google Sheet.
     """
     try:
+        sheet_id = req.spreadsheet_id if req else None
         print("[rebuild] Full rebuild requested — clearing vector store...")
         # Drop and recreate the Chroma collection
         vector_store.reset_collection()
@@ -209,7 +211,7 @@ def rebuild_index():
         conn.commit()
         conn.close()
 
-        res = sync_worker.run_sync()
+        res = sync_worker.run_sync(spreadsheet_id=sheet_id)
         return {"ok": True, "rebuild": True, **res}
     except Exception as e:
         raise HTTPException(
