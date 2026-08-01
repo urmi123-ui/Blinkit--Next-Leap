@@ -1,9 +1,9 @@
 # Stage 1: Build React Frontend
 FROM node:20-alpine AS frontend-builder
 WORKDIR /app/web
-COPY apps/web/package*.json ./
+COPY ["apps/web/package*.json", "./"]
 RUN npm ci
-COPY apps/web/ ./
+COPY ["apps/web/", "./"]
 RUN npm run build
 
 # Stage 2: Build Python Backend & Run
@@ -14,11 +14,11 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
 # Install python dependencies
-COPY apps/api/requirements.txt ./
+COPY ["apps/api/requirements.txt", "./"]
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy backend files
-COPY apps/api/ ./
+COPY ["apps/api/", "./"]
 
 # Copy compiled frontend from Stage 1
 COPY --from=frontend-builder /app/web/dist /app/web/dist
