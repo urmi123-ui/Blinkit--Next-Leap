@@ -25,8 +25,8 @@ COPY apps/api/ ./
 # Copy compiled frontend from Stage 1
 COPY --from=frontend-builder /app/web/dist /app/web/dist
 
-# Expose port 7860 (Hugging Face default)
-EXPOSE 7860
+# Expose port (default 8000, overridden by Railway $PORT)
+EXPOSE 8000
 
-# Command to run uvicorn on port 7860
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860"]
+# Command to run uvicorn on $PORT (defaults to 8000 if PORT is not set)
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]
