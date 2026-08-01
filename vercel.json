@@ -1,8 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "cd \"Blinkit AI Discovery Engine/apps/web\" && npm run build",
-  "outputDirectory": "Blinkit AI Discovery Engine/apps/web/dist",
-  "installCommand": "cd \"Blinkit AI Discovery Engine/apps/web\" && npm install",
+  "installCommand": "test -d \"Blinkit AI Discovery Engine/apps/web\" && cd \"Blinkit AI Discovery Engine/apps/web\"; npm install",
+  "buildCommand": "test -d \"Blinkit AI Discovery Engine/apps/web\" && cd \"Blinkit AI Discovery Engine/apps/web\"; npm run build",
+  "outputDirectory": "dist",
   "rewrites": [
     {
       "source": "/(.*)",
