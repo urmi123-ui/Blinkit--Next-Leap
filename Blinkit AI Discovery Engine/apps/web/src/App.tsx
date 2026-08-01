@@ -87,7 +87,14 @@ interface InsightResponse {
 }
 
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const getApiBase = () => {
+  const envUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL;
+  if (envUrl) return envUrl.replace(/\/$/, "");
+  if (import.meta.env.PROD) return "";
+  return "http://localhost:8000";
+};
+
+const API_BASE = getApiBase();
 
 function App() {
   // Navigation State
