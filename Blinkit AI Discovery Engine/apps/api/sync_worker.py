@@ -15,8 +15,13 @@ def run_sync(spreadsheet_id: str = None) -> dict:
         spreadsheet_id = os.getenv("SPREADSHEET_ID")
         
     if not spreadsheet_id:
-        raise ValueError("SPREADSHEET_ID environment variable is missing or empty.")
+        raise ValueError("SPREADSHEET_ID environment variable is missing or empty. Please set SPREADSHEET_ID in your environment variables.")
         
+    # Extract spreadsheet ID if a full URL was provided
+    spreadsheet_id = spreadsheet_id.strip("'\" \t\r\n")
+    if "/d/" in spreadsheet_id:
+        spreadsheet_id = spreadsheet_id.split("/d/")[1].split("/")[0]
+
     print(f"Starting sync for Google Sheet ID: {spreadsheet_id}")
     
     # Export CSV URL
@@ -29,8 +34,12 @@ def run_sync(spreadsheet_id: str = None) -> dict:
         )
         with urllib.request.urlopen(req) as response:
             csv_content = response.read().decode('utf-8')
+    except urllib.error.HTTPError as e:
+        if e.code in (403, 401, 302):
+            raise RuntimeError("Google Sheet permission denied. Please click Share in Google Sheets and set General access to 'Anyone with the link' -> 'Viewer'.")
+        raise RuntimeError(f"Failed to fetch Google Sheet (HTTP {e.code}): {e.reason}")
     except urllib.error.URLError as e:
-        raise RuntimeError(f"Failed to fetch Google Sheet CSV: {e.reason}")
+        raise RuntimeError(f"Failed to connect to Google Sheets: {e.reason}")
     except Exception as e:
         raise RuntimeError(f"Unexpected error when downloading sheet: {str(e)}")
 
