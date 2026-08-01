@@ -88,13 +88,13 @@ interface InsightResponse {
 
 
 const getApiBase = () => {
+  const savedUrl = typeof window !== 'undefined' ? localStorage.getItem('override_api_url') : null;
+  if (savedUrl) return savedUrl.replace(/\/$/, "");
   const envUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL;
   if (envUrl) return envUrl.replace(/\/$/, "");
   if (import.meta.env.PROD) return "";
   return "http://localhost:8000";
 };
-
-const API_BASE = getApiBase();
 
 function App() {
   // Navigation State
@@ -104,7 +104,10 @@ function App() {
   const [apiHealth, setApiHealth] = useState<HealthStatus | null>(null);
   const [checkingHealth, setCheckingHealth] = useState<boolean>(true);
   const [dbStats, setDbStats] = useState<DatabaseStats | null>(null);
-  
+  const [customApiUrl, setCustomApiUrl] = useState<string>(() => {
+    return typeof window !== 'undefined' ? localStorage.getItem('override_api_url') || '' : '';
+  });
+
   // Interaction / Filter States
   const [question, setQuestion] = useState<string>('');
   const [selectedPersona, setSelectedPersona] = useState<string>('All Personas');
@@ -132,17 +135,16 @@ function App() {
   const fetchStatusFiltersAndStats = async () => {
     setCheckingHealth(true);
     setErrorMsg(null);
+    const targetBase = getApiBase();
     try {
       // 1. Fetch Health
-      const healthRes = await fetch(`${API_BASE}/health`);
+      const healthRes = await fetch(`${targetBase}/health`);
       if (!healthRes.ok) throw new Error("API server responded with error");
       const healthData = (await healthRes.json()) as HealthStatus;
       setApiHealth(healthData);
 
-
-
       // 3. Fetch database stats
-      const statsRes = await fetch(`${API_BASE}/stats`);
+      const statsRes = await fetch(`${targetBase}/stats`);
       if (statsRes.ok) {
         const statsData = (await statsRes.json()) as DatabaseStats;
         setDbStats(statsData);
@@ -160,7 +162,7 @@ function App() {
     setSyncing(true);
     setErrorMsg(null);
     try {
-      const res = await fetch(`${API_BASE}/sync`, { method: 'POST' });
+      const res = await fetch(`${getApiBase()}/sync`, { method: 'POST' });
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || "Sync failed");
       
@@ -184,7 +186,7 @@ function App() {
     setRebuilding(true);
     setErrorMsg(null);
     try {
-      const res = await fetch(`${API_BASE}/sync/rebuild`, { method: 'POST' });
+      const res = await fetch(`${getApiBase()}/sync/rebuild`, { method: 'POST' });
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || "Rebuild failed");
       
@@ -231,7 +233,7 @@ function App() {
     };
 
     try {
-      const res = await fetch(`${API_BASE}/query`, {
+      const res = await fetch(`${getApiBase()}/query`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -359,9 +361,38 @@ function App() {
           )}
           
           {!apiHealth && !checkingHealth && (
-            <button className="reconnect-btn" onClick={fetchStatusFiltersAndStats}>
-              🔌 Reconnect API
-            </button>
+            <div style={{ marginTop: '10px' }}>
+              <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '6px' }}>
+                Backend URL (Railway Domain):
+              </div>
+              <input 
+                type="text" 
+                placeholder="https://xxx.up.railway.app" 
+                value={customApiUrl}
+                onChange={(e) => setCustomApiUrl(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '6px 8px',
+                  fontSize: '11px',
+                  borderRadius: '4px',
+                  border: '1px solid #334155',
+                  background: '#0f172a',
+                  color: '#f8fafc',
+                  marginBottom: '6px'
+                }}
+              />
+              <button 
+                className="reconnect-btn" 
+                onClick={() => {
+                  if (customApiUrl.trim()) {
+                    localStorage.setItem('override_api_url', customApiUrl.trim());
+                  }
+                  fetchStatusFiltersAndStats();
+                }}
+              >
+                🔌 Connect to API
+              </button>
+            </div>
           )}
         </div>
       </aside>
