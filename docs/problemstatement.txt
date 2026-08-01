@@ -1,0 +1,255 @@
+================================================================================
+PROBLEM STATEMENT
+AI-Powered Category Discovery Engine for Blinkit
+================================================================================
+
+PROJECT
+-------
+Company: Blinkit
+
+Role: Product Manager – Growth Team
+
+Project Objective:
+Build an AI-powered Discovery Engine that analyzes customer feedback to
+understand why users rarely explore new product categories, validate those
+insights through user research, and use the findings to build an AI-native MVP.
+
+================================================================================
+1. BUSINESS CONTEXT
+================================================================================
+
+Quick-commerce platforms such as Blinkit have become deeply integrated into
+customers' daily and weekly shopping routines.
+
+Most users repeatedly purchase the same products from the same categories.
+They open Blinkit with a specific shopping intent, reorder familiar items,
+complete the purchase quickly, and leave the app.
+
+This behavior creates an efficient shopping experience but also limits
+product discovery.
+
+Examples include:
+
+• Grocery shoppers rarely purchase Pet Care products.
+• Snack buyers rarely explore Personal Care.
+• Household Essentials buyers rarely purchase Baby Care products.
+
+For Blinkit, encouraging customers to purchase from at least one additional
+category each month represents an important growth opportunity because it can
+increase basket diversity, customer lifetime value, and long-term retention
+without relying solely on acquiring new customers.
+
+================================================================================
+2. THE PROBLEM
+================================================================================
+
+While Blinkit can observe what customers purchase, it is much harder to
+understand why customers remain within the same shopping categories.
+
+Questions such as:
+
+• Why do customers repeatedly purchase from the same categories?
+• What prevents them from trying unfamiliar categories?
+• What information or reassurance do they need before making a first purchase?
+• Which customer segments naturally explore more?
+• How do customers currently discover new products?
+
+cannot be answered confidently without analyzing large amounts of customer
+feedback.
+
+Before proposing any product solution, these behavioral patterns must first
+be understood using real customer evidence.
+
+================================================================================
+3. PROJECT APPROACH
+================================================================================
+
+The project will be completed in four stages.
+
+Part 1
+Build an AI-powered Discovery Engine capable of analyzing customer feedback
+at scale.
+
+Part 2
+Validate the AI-generated insights through primary user research.
+
+Part 3
+Define the actual customer problem based on both AI analysis and interview
+findings.
+
+Part 4
+Build and deploy an AI-native MVP that addresses the validated problem.
+
+Each stage builds upon the previous one.
+
+================================================================================
+4. PART 1 — AI DISCOVERY ENGINE
+================================================================================
+
+Goal
+
+Develop an AI-powered Discovery Engine that transforms large volumes of
+customer feedback into structured, searchable, evidence-backed product
+insights.
+
+Instead of manually reading hundreds of reviews, a Product Manager should be
+able to ask natural language questions and receive answers supported by
+actual customer feedback.
+
+Example questions include:
+
+• Why don't users explore new categories?
+• What shopping habits appear repeatedly?
+• Which personas are most likely to experiment?
+• Which barriers occur most frequently?
+• What unmet needs appear consistently across reviews?
+
+The Discovery Engine serves as a research assistant rather than a decision
+maker. Its purpose is to generate hypotheses supported by customer evidence,
+which will later be validated through user interviews.
+
+================================================================================
+5. DATA SOURCE
+================================================================================
+
+The Discovery Engine does not collect customer reviews itself.
+
+Review collection and preprocessing are intentionally kept outside the scope
+of this MVP.
+
+Instead, the Discovery Engine uses a curated Google Sheet containing
+AI-processed customer reviews.
+
+This Google Sheet acts as the single source of truth for the application.
+
+Whenever additional reviews are processed, they will simply be appended to
+the same Google Sheet.
+
+The Discovery Engine should always analyze the latest available data without
+requiring any changes to its implementation.
+
+This approach keeps the MVP focused on customer insight generation rather
+than building a large-scale review collection pipeline.
+
+================================================================================
+6. CURRENT DATASET
+================================================================================
+
+The current Google Sheet contains an initial set of processed Blinkit
+reviews.
+
+Each review includes structured information such as:
+
+• Review
+• Problem
+• Pain Point
+• Product Area
+• Shopping Goal
+• User Persona
+• Emotion
+• Barrier to New Category
+• Frequency
+• Priority
+• Recommended Action
+
+Current Limitation
+
+Initial exploration of the dataset revealed an important observation.
+
+Most existing reviews focus on operational issues, including:
+
+• Delivery delays
+• Refunds
+• Customer support
+• Delivery charges
+• Missing products
+• Product quality
+
+Only a small number of reviews currently discuss shopping habits,
+category exploration, trust when trying unfamiliar products,
+or reasons customers avoid purchasing from new categories.
+
+As a result, the current dataset is sufficient for building and testing the
+Discovery Engine, but it is not yet sufficient to answer every research
+question related to category exploration.
+
+The dataset will therefore continue to grow throughout the project as
+additional reviews focused on shopping behavior and product discovery are
+processed and added to the Google Sheet.
+
+================================================================================
+7. HOW THE DISCOVERY ENGINE WORKS
+================================================================================
+
+The Discovery Engine is designed to answer product research questions using
+customer evidence rather than assumptions.
+
+For every question asked by a Product Manager, the system first performs
+semantic retrieval across the processed review dataset to identify the most
+relevant customer feedback.
+
+Those retrieved reviews are then provided as context to a Large Language
+Model using a Retrieval-Augmented Generation (RAG) workflow.
+
+The language model generates insights only from the retrieved evidence.
+
+Where possible, every insight should reference the reviews that contributed
+to the answer, allowing findings to be traced back to their original source.
+
+This ensures that conclusions remain grounded in customer feedback instead of
+being generated solely from the model's prior knowledge.
+
+================================================================================
+
+8. EXPECTED CAPABILITIES
+================================================================================
+
+The Discovery Engine should enable a Product Manager to:
+
+• Search customer feedback semantically.
+• Discover recurring themes.
+• Compare insights across personas.
+• Identify category exploration barriers.
+• Analyze shopping habits.
+• Surface unmet customer needs.
+• Generate evidence-backed summaries.
+• Support interview planning by generating research hypotheses.
+
+================================================================================
+9. PROJECT SCOPE
+================================================================================
+
+Included
+
+• Reading processed review data from Google Sheets.
+• AI-powered semantic search.
+• Retrieval-Augmented Generation (RAG).
+• Theme identification.
+• Persona analysis.
+• Evidence-backed insight generation.
+
+Not Included
+
+• Automatic review scraping.
+• Continuous review collection.
+• Social media crawling.
+• Production-scale ingestion pipelines.
+• Blinkit's internal customer databases.
+• Recommendation algorithms.
+
+These capabilities may be considered in future iterations but are outside
+the scope of this MVP.
+
+================================================================================
+10. SUCCESS CRITERIA
+================================================================================
+
+The Discovery Engine will be considered successful if it enables a Product
+Manager to:
+
+• Understand recurring customer behaviors quickly.
+• Identify barriers preventing category exploration.
+• Generate evidence-backed research hypotheses.
+• Support user interviews with meaningful insights.
+• Provide a reliable foundation for problem definition and MVP design.
+
