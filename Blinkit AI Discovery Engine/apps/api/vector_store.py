@@ -15,7 +15,7 @@ raw_chroma_path = os.getenv("CHROMA_PERSIST_PATH", "./data/chroma")
 if os.path.isabs(raw_chroma_path):
     CHROMA_PATH = raw_chroma_path
 else:
-    CHROMA_PATH = os.path.abspath(os.path.join(ROOT_DIR, raw_chroma_path))
+    CHROMA_PATH = os.path.abspath(os.path.join(CURRENT_DIR, raw_chroma_path))
 
 # Initialize local ChromaDB client
 print(f"Initializing ChromaDB Client at: {CHROMA_PATH}")

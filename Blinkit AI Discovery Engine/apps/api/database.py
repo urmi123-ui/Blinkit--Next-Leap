@@ -14,7 +14,7 @@ raw_db_path = os.getenv("SQLITE_DB_PATH", "./data/discovery.db")
 if os.path.isabs(raw_db_path):
     DB_PATH = raw_db_path
 else:
-    DB_PATH = os.path.abspath(os.path.join(ROOT_DIR, raw_db_path))
+    DB_PATH = os.path.abspath(os.path.join(CURRENT_DIR, raw_db_path))
 
 def init_db():
     # Ensure directory exists
