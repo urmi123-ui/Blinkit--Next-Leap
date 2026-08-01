@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import os
 import sqlite3
 import json
+import threading
 from dotenv import load_dotenv
 from typing import List, Dict, Any, Optional
 
@@ -76,8 +77,8 @@ async def lifespan(app: FastAPI):
     # Initialize database schema
     database.init_db()
 
-    # Phase 6: Startup auto-sync if index empty
-    _startup_sync_if_empty()
+    # Phase 6: Startup auto-sync in a background thread to prevent blocking Uvicorn / health checks
+    threading.Thread(target=_startup_sync_if_empty, daemon=True).start()
 
     # Phase 6: Optional scheduled background sync (every 30 min)
     scheduler = None
