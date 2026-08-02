@@ -12,53 +12,7 @@
 </head>
 <body>
 
-  <!-- Admin Controls Panel -->
-  <header class="admin-header">
-    <div class="header-logo">
-      <span class="yellow-dot"></span>
-      <h1>Blinkit Finds MVP</h1>
-      <span class="badge-pill">Phase 3: Finds Feed</span>
-    </div>
-    
-    <div class="admin-controls-row">
-      <div class="flag-config-toggles">
-        <span class="control-label">Simulate Remote Feature Flags:</span>
-        <label class="switch-container">
-          <input type="checkbox" id="flag-finds-toggle" checked>
-          <span class="switch-slider"></span>
-          <span class="switch-label">finds_enabled</span>
-        </label>
-        <label class="switch-container">
-          <input type="checkbox" id="flag-trust-toggle" checked>
-          <span class="switch-slider"></span>
-          <span class="switch-label">enhanced_pdp_trust</span>
-        </label>
-      </div>
-
-      <div class="product-selector-panel">
-        <label for="product-select">Direct PDP Launch:</label>
-        <select id="product-select" class="styled-select">
-          <option value="p101" selected>p101: Glycolic Vitamin C Serum</option>
-          <option value="p102">p102: Pet Life Waterless Shampoo</option>
-          <option value="p103">p103: Copper String LED Fairy Lights</option>
-          <option value="p104">p104: Pest Killer Insecticide Spray</option>
-          <option value="p105">p105: Wireless Over-Ear Headphones</option>
-          <option value="fail">Simulated API Failure</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Developer Analytics Events Log Panel -->
-    <div class="analytics-log-panel-container">
-      <div class="analytics-panel-header">
-        <span>⚙️ Developer Analytics Log Console (Emit Funnel Events)</span>
-        <button class="clear-log-btn" onclick="clearAnalyticsLog()">Clear Console</button>
-      </div>
-      <div class="analytics-log-list" id="analytics-log-list">
-        <div class="log-placeholder-msg">Events pipeline is listening... Navigate the sandbox to emit events.</div>
-      </div>
-    </div>
-  </header>
+  <!-- Admin Controls Panel Removed -->
 
   <main class="app-container">
     <!-- Simulator Device Frame -->
@@ -591,10 +545,10 @@
   </footer>
 
   <script>
-    // Flag Toggles
-    const flagFindsToggle = document.getElementById('flag-finds-toggle');
-    const flagTrustToggle = document.getElementById('flag-trust-toggle');
-    const productSelect = document.getElementById('product-select');
+    // Flag Toggles (Mocked to be always active since the admin header is removed)
+    const flagFindsToggle = { checked: true };
+    const flagTrustToggle = { checked: true };
+    const productSelect = null;
 
     // UI View Containers
     const viewHome = document.getElementById('view-home');
@@ -1331,19 +1285,25 @@
     }
 
     // Dynamic Select launch from selector
-    productSelect.addEventListener('change', (e) => {
-      openPdp(e.target.value, 'home');
-    });
+    if (productSelect) {
+      productSelect.addEventListener('change', (e) => {
+        openPdp(e.target.value, 'home');
+      });
+    }
 
     // Toggle Flag listeners
-    flagFindsToggle.addEventListener('change', updateFlagsState);
-    flagTrustToggle.addEventListener('change', () => {
-      // Re-trigger PDP render if PDP is currently active
-      if (!viewPdp.classList.contains('hidden')) {
-        const activeSelectVal = productSelect.value;
-        openPdp(activeSelectVal, previousView);
-      }
-    });
+    if (flagFindsToggle && flagFindsToggle.addEventListener) {
+      flagFindsToggle.addEventListener('change', updateFlagsState);
+    }
+    if (flagTrustToggle && flagTrustToggle.addEventListener) {
+      flagTrustToggle.addEventListener('change', () => {
+        // Re-trigger PDP render if PDP is currently active
+        if (!viewPdp.classList.contains('hidden')) {
+          const activeSelectVal = productSelect ? productSelect.value : 'p101';
+          openPdp(activeSelectVal, previousView);
+        }
+      });
+    }
 
     // Initial setups
     updateFlagsState();
