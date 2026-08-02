@@ -1,0 +1,33 @@
+# Node dependencies
+node_modules/
+dist/
+.eslintcache
+
+# Python dependencies
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+v/
+.env
+.venv
+pip-log.txt
+.ipynb_checkpoints
+
+# Local Databases, Vector Store, Logs
+apps/api/data/
+data/
+*.db
+*.log
+query_log.jsonl
+
+# IDE configurations
+.idea/
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db

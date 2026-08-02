@@ -59,7 +59,7 @@ There are two ways to import the workflow:
 
 #### Option A: Copy-Paste / URL Import (Easiest)
 1. Open your **n8n** canvas.
-2. Copy the raw workflow JSON from this link: [workflow.json (Raw)](https://raw.githubusercontent.com/urmi123-ui/Blinkit--Next-Leap/main/workflow.json)
+2. Copy the raw workflow JSON from this link: [workflow.json (Raw)](https://raw.githubusercontent.com/urmi123-ui/Blinkit--Next-Leap/main/blinkit%20n8n%20workflow/workflow.json)
 3. Press `Ctrl + V` (or `Cmd + V` on Mac) directly on the n8n canvas, or click the **Import from URL** option in the workflow menu and paste the URL.
 
 #### Option B: Import from File
@@ -92,7 +92,7 @@ Create and connect the following credentials inside n8n:
 A sample dataset is available for testing:
 
 ```
-sample-data/sample_reviews.csv
+samplereview.csv
 ```
 
 ---
@@ -291,25 +291,13 @@ After importing the workflow, update these nodes to match your own setup:
 ## 📁 Repository Structure
 
 ```
-Blinkit--Next-Leap/
+blinkit n8n workflow/
 ├── workflow.json              # n8n workflow definition (importable)
 ├── image.png                  # Workflow diagram screenshot
-├── sample-data/
-│   └── sample_reviews.csv     # Small sample dataset for testing
+├── Dockerfile                 # Dockerfile for deploying n8n
+├── samplereview.csv           # Small sample dataset for testing
 └── README.md                  # This file
 ```
-
-> **Note:** The complete review dataset used during development is not included in this repository. Use the sample CSV to test the pipeline end-to-end.
-
----
-
-## 🔮 Potential Extensions
-
-- 🗓️ **Scheduled trigger** — Replace the manual trigger with a cron schedule to run nightly
-- 📦 **Multi-batch support** — Parameterize the filename to loop over multiple CSV batches automatically
-- 📊 **Dashboard integration** — Connect the Google Sheet to Looker Studio or Power BI for live insight dashboards
-- 🔔 **Slack/email alerts** — Send a summary notification when a batch run completes
-- 🧠 **Embedding + clustering** — Add a vector embedding step to cluster similar pain points
 
 ---
 
@@ -327,7 +315,7 @@ You can deploy n8n **100% free** by combining Render's free container hosting wi
 #### Step 2: Deploy to Render
 1. Sign up/log in to [Render](https://render.com/).
 2. Click **New +** → **Web Service** → Connect your GitHub repository (`Blinkit--Next-Leap`).
-3. Render will automatically detect the [Dockerfile](file:///c:/Users/Urmi%20Maheshwari/Desktop/Blinkit--Next-Leap/Dockerfile) we've added to build the container.
+3. Render will automatically detect the [Dockerfile](Dockerfile) we've added to build the container.
 4. Set the following environment variables in the Render console:
    * `DB_TYPE`: `postgresdb`
    * `DB_POSTGRESDB_CONNECTION_URL`: *(Your Neon Connection String)*
