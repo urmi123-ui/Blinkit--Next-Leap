@@ -47,7 +47,7 @@ Before running the workflow, make sure you have:
 ### Step 1: Clone the Repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/urmi123-ui/Blinkit--Next-Leap.git
 cd Blinkit--Next-Leap
 ```
 
@@ -55,6 +55,14 @@ cd Blinkit--Next-Leap
 
 ### Step 2: Import the Workflow
 
+There are two ways to import the workflow:
+
+#### Option A: Copy-Paste / URL Import (Easiest)
+1. Open your **n8n** canvas.
+2. Copy the raw workflow JSON from this link: [workflow.json (Raw)](https://raw.githubusercontent.com/urmi123-ui/Blinkit--Next-Leap/main/workflow.json)
+3. Press `Ctrl + V` (or `Cmd + V` on Mac) directly on the n8n canvas, or click the **Import from URL** option in the workflow menu and paste the URL.
+
+#### Option B: Import from File
 1. Open **n8n**.
 2. Go to **Workflows → Import from File**.
 3. Select `workflow.json` from the cloned repository.
@@ -302,6 +310,39 @@ Blinkit--Next-Leap/
 - 📊 **Dashboard integration** — Connect the Google Sheet to Looker Studio or Power BI for live insight dashboards
 - 🔔 **Slack/email alerts** — Send a summary notification when a batch run completes
 - 🧠 **Embedding + clustering** — Add a vector embedding step to cluster similar pain points
+
+---
+
+## 🌐 Deployment Options (Including Free Tier)
+
+If you want to host n8n so it runs continuously and handles webhooks or schedules in the background, consider these options:
+
+### 🆓 Completely Free Option (Render + Neon Postgres)
+You can deploy n8n **100% free** by combining Render's free container hosting with Neon's free serverless Postgres database. 
+
+#### Step 1: Set up a Free Postgres Database
+1. Sign up for a free database on [Neon.tech](https://neon.tech/).
+2. Create a new project and copy your **connection string** (e.g., `postgres://user:password@ep-xxxx.neon.tech/neondb?sslmode=require`).
+
+#### Step 2: Deploy to Render
+1. Sign up/log in to [Render](https://render.com/).
+2. Click **New +** → **Web Service** → Connect your GitHub repository (`Blinkit--Next-Leap`).
+3. Render will automatically detect the [Dockerfile](file:///c:/Users/Urmi%20Maheshwari/Desktop/Blinkit--Next-Leap/Dockerfile) we've added to build the container.
+4. Set the following environment variables in the Render console:
+   * `DB_TYPE`: `postgresdb`
+   * `DB_POSTGRESDB_CONNECTION_URL`: *(Your Neon Connection String)*
+   * `PORT`: `5678`
+   * `N8N_ENCRYPTION_KEY`: *(Create a random secure string)*
+   * `WEBHOOK_URL`: `https://your-app-name.onrender.com/`
+5. Click **Deploy**.
+
+> [!NOTE]
+> Render's free tier spins down (goes to sleep) after 15 minutes of inactivity. To keep your n8n instance awake so scheduled triggers run on time, use a free service like `cron-job.org` or `UptimeRobot` to ping your n8n URL (`https://your-app-name.onrender.com/`) every 10 minutes.
+
+### 💰 Other Hosting Options
+* **n8n Cloud (Official Managed)**: The easiest paid route. Sign up at [n8n.io](https://n8n.io/).
+* **Low-Cost PaaS (Railway / PikaPods)**: Deploy in a single click using templates (~$3–$5/mo).
+* **VPS Self-Hosted (DigitalOcean / Hetzner / AWS)**: Deploy using Docker Compose on a virtual machine (~$4–$10/mo) for maximum power and no execution limits.
 
 ---
 
