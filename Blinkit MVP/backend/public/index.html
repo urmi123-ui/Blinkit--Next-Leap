@@ -1,0 +1,1353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blinkit Finds MVP - Video Feed & PDP Trust Layer Simulator</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Google Fonts: Outfit and Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Admin Controls Panel -->
+  <header class="admin-header">
+    <div class="header-logo">
+      <span class="yellow-dot"></span>
+      <h1>Blinkit Finds MVP</h1>
+      <span class="badge-pill">Phase 3: Finds Feed</span>
+    </div>
+    
+    <div class="admin-controls-row">
+      <div class="flag-config-toggles">
+        <span class="control-label">Simulate Remote Feature Flags:</span>
+        <label class="switch-container">
+          <input type="checkbox" id="flag-finds-toggle" checked>
+          <span class="switch-slider"></span>
+          <span class="switch-label">finds_enabled</span>
+        </label>
+        <label class="switch-container">
+          <input type="checkbox" id="flag-trust-toggle" checked>
+          <span class="switch-slider"></span>
+          <span class="switch-label">enhanced_pdp_trust</span>
+        </label>
+      </div>
+
+      <div class="product-selector-panel">
+        <label for="product-select">Direct PDP Launch:</label>
+        <select id="product-select" class="styled-select">
+          <option value="p101" selected>p101: Glycolic Vitamin C Serum</option>
+          <option value="p102">p102: Pet Life Waterless Shampoo</option>
+          <option value="p103">p103: Copper String LED Fairy Lights</option>
+          <option value="p104">p104: Pest Killer Insecticide Spray</option>
+          <option value="p105">p105: Wireless Over-Ear Headphones</option>
+          <option value="fail">Simulated API Failure</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Developer Analytics Events Log Panel -->
+    <div class="analytics-log-panel-container">
+      <div class="analytics-panel-header">
+        <span>⚙️ Developer Analytics Log Console (Emit Funnel Events)</span>
+        <button class="clear-log-btn" onclick="clearAnalyticsLog()">Clear Console</button>
+      </div>
+      <div class="analytics-log-list" id="analytics-log-list">
+        <div class="log-placeholder-msg">Events pipeline is listening... Navigate the sandbox to emit events.</div>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-container">
+    <!-- Simulator Device Frame -->
+    <div class="iphone-device">
+      <div class="iphone-notch"></div>
+      <div class="iphone-screen">
+        
+        <!-- App Header (Shown on Home and PDP, hidden on Finds video feed) -->
+        <div class="app-header" id="app-header">
+          <button class="back-btn" id="app-back-btn" aria-label="Back" style="display: none;">
+            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          </button>
+          
+          <!-- Blinkit address header from Screenshot -->
+          <div class="blinkit-header-content" id="header-address-content">
+            <div class="delivery-time-row">
+              <span class="delivery-time-title">12 minutes</span>
+              <div class="user-avatar-icon"></div>
+            </div>
+            <div class="delivery-address-row">
+              <span class="address-text">WORK - 18th floor, 1804, T2</span>
+              <span class="down-arrow-indicator">▼</span>
+            </div>
+          </div>
+
+          <!-- App Header Search bar -->
+          <div class="app-header-search-row">
+            <div class="app-header-search">
+              <span class="search-placeholder">Search "beauty & essentials"</span>
+            </div>
+            <div class="voice-search-icon-wave">
+              <span></span><span></span><span></span><span></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 1. HOME VIEW CONTAINER (Blinkit App UI Screenshot Replica) -->
+        <div class="view-container" id="view-home">
+          <!-- Categories Bar (Rakhi, Kids, Electronics, Beauty) -->
+          <div class="blinkit-quick-categories-row">
+            <div class="quick-cat-item" onclick="switchTab('finds')">
+              <div class="quick-cat-icon all-cat">All</div>
+            </div>
+            <div class="quick-cat-item" onclick="switchTab('finds')">
+              <div class="quick-cat-icon rakhi-cat">
+                <span class="new-label-pill">New</span>
+                🪔
+              </div>
+              <span>Rakhi</span>
+            </div>
+            <div class="quick-cat-item" onclick="launchVideoDirect(2)">
+              <div class="quick-cat-icon kids-cat">🧸</div>
+              <span>Kids</span>
+            </div>
+            <div class="quick-cat-item" onclick="launchVideoDirect(4)">
+              <div class="quick-cat-icon elec-cat">🎧</div>
+              <span>Electronics</span>
+            </div>
+            <div class="quick-cat-item" onclick="launchVideoDirect(0)">
+              <div class="quick-cat-icon beauty-cat">🧴</div>
+              <span>Beauty</span>
+            </div>
+          </div>
+
+          <!-- Celebrate Friendship Day Grid layout -->
+          <div class="friendship-day-section">
+            <span class="promo-header-sub">CELEBRATE</span>
+            <h3 class="promo-header-title">FRIENDSHIP DAY</h3>
+            
+            <div class="friendship-grid">
+              <div class="friendship-card main-promo" onclick="launchVideoDirect(2)">
+                <h4>Bands, Cards & Flowers</h4>
+                <div class="pricing-badge-promo">
+                  <span class="slashed-price">₹199</span>
+                  <span class="active-price">₹49</span>
+                </div>
+                <span class="product-label-promo">Friendship Band</span>
+                <div class="friendship-band-art">
+                  <span></span><span></span><span></span>
+                </div>
+              </div>
+
+              <div class="friendship-right-column">
+                <div class="friendship-card gift-corner" onclick="launchVideoDirect(0)">
+                  <span>Gifting Corner</span>
+                  <img src="https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=100" alt="Gifting">
+                </div>
+                <div class="friendship-card party-friends">
+                  <span>Party With Friends</span>
+                  <img src="https://images.unsplash.com/photo-1550989460-0adf9ea622e2?w=100" alt="Party">
+                </div>
+              </div>
+            </div>
+
+            <div class="friendship-row-bottom">
+              <div class="friendship-card chocolate-cakes" onclick="launchVideoDirect(1)">
+                <span>Chocolates & Cakes</span>
+                <img src="https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=100" alt="Chocolates">
+              </div>
+              <div class="friendship-card girlfriend-day">
+                <span>Girlfriend's Day</span>
+                <span class="date-badge-promo">1st August</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Blinkit Finds tray - Replaced the Harry Potter Birthday Banner in the MIDDLE of page -->
+          <div class="blinkit-finds-home-tray" id="blinkit-finds-home-section">
+            <div class="tray-header">
+              <div class="tray-title-row">
+                <span class="yellow-dot-blink"></span>
+                <h3>Blinkit Finds</h3>
+                <span class="new-tag-pill">HOT</span>
+              </div>
+              <button class="tray-see-all" onclick="switchTab('finds')">See All ➔</button>
+            </div>
+            
+            <div class="finds-horizontal-tray">
+              <!-- Video card p101 -->
+              <div class="tray-video-card" onclick="launchVideoDirect(0)">
+                <div class="tray-thumbnail-wrapper">
+                  <img src="https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=150" alt="Vitamin C">
+                  <div class="play-badge">▶</div>
+                </div>
+                <div class="tray-video-info">
+                  <span class="tray-video-title">Vitamin C Serum</span>
+                  <span class="tray-video-rating">4.6 ★</span>
+                </div>
+              </div>
+              
+              <!-- Video card p102 -->
+              <div class="tray-video-card" onclick="launchVideoDirect(1)">
+                <div class="tray-thumbnail-wrapper">
+                  <img src="https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?w=150" alt="Pet Shampoo">
+                  <div class="play-badge">▶</div>
+                </div>
+                <div class="tray-video-info">
+                  <span class="tray-video-title">Waterless Shampoo</span>
+                  <span class="tray-video-rating">4.8 ★</span>
+                </div>
+              </div>
+
+              <!-- Video card p103 -->
+              <div class="tray-video-card" onclick="launchVideoDirect(2)">
+                <div class="tray-thumbnail-wrapper">
+                  <img src="https://images.unsplash.com/photo-1517263904808-5dc91e3e7044?w=150" alt="Fairy Lights">
+                  <div class="play-badge">▶</div>
+                </div>
+                <div class="tray-video-info">
+                  <span class="tray-video-title">Fairy Lights</span>
+                  <span class="tray-video-rating">4.9 ★</span>
+                </div>
+              </div>
+
+              <!-- Video card p104 -->
+              <div class="tray-video-card" onclick="launchVideoDirect(3)">
+                <div class="tray-thumbnail-wrapper">
+                  <img src="https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=150" alt="Pest Killer">
+                  <div class="play-badge">▶</div>
+                </div>
+                <div class="tray-video-info">
+                  <span class="tray-video-title">Pest Killer Spray</span>
+                  <span class="tray-video-rating">4.0 ★</span>
+                </div>
+              </div>
+
+              <!-- Video card p105 -->
+              <div class="tray-video-card" onclick="launchVideoDirect(4)">
+                <div class="tray-thumbnail-wrapper">
+                  <img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=150" alt="Headphones">
+                  <div class="play-badge">▶</div>
+                </div>
+                <div class="tray-video-info">
+                  <span class="tray-video-title">Wireless Headphones</span>
+                  <span class="tray-video-rating">4.7 ★</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Previously Bought Section (from Screenshot) -->
+          <div class="home-grocery-shelf">
+            <h3>Previously bought</h3>
+            <div class="grocery-products-row">
+              <div class="grocery-item-card">
+                <img src="https://images.unsplash.com/photo-1550989460-0adf9ea622e2?w=100" alt="Milk">
+                <span class="grocery-name">Amul Whole Milk 1L</span>
+                <span class="grocery-price">₹60</span>
+                <button class="add-mini-btn">ADD</button>
+              </div>
+              <div class="grocery-item-card">
+                <img src="https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=100" alt="Eggs">
+                <span class="grocery-name">Amul Fresh Curd 400g</span>
+                <span class="grocery-price">₹35</span>
+                <button class="add-mini-btn">ADD</button>
+              </div>
+              <div class="grocery-item-card">
+                <img src="https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=100" alt="Tissues">
+                <span class="grocery-name">Origami Premium Tissues</span>
+                <span class="grocery-price">₹95</span>
+                <button class="add-mini-btn">ADD</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- District by Blinkit Events Row -->
+          <div class="home-district-shelf" onclick="triggerNavToast('District')">
+            <div class="district-header">
+              <div class="district-logo-area">
+                <span class="district-tag-pill">New</span>
+                <span class="district-brand-name">district</span>
+              </div>
+              <span class="district-cta">Explore Events ➔</span>
+            </div>
+            <div class="district-banner-card">
+              <div class="district-banner-content">
+                <div class="district-banner-text">
+                  <h4>Comedy, Concerts & Dining out</h4>
+                  <p>Book tickets & tables in your city</p>
+                </div>
+                <div class="district-emoji-group">
+                  🍔 🎸 🎤
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. FINDS VIEW CONTAINER (Short-form video discovery feed) -->
+        <div class="view-container hidden" id="view-finds">
+          <div class="finds-video-wrapper">
+            
+            <!-- Video Elements -->
+            <video id="finds-video-player" loop muted playsinline src=""></video>
+            
+            <!-- Video Overlay Tint -->
+            <div class="video-overlay-tint"></div>
+            
+            <!-- Live Status & Tags -->
+            <div class="video-top-overlay">
+              <span class="live-pill">Finds</span>
+              <span class="category-pill-tag" id="finds-item-category">Beauty</span>
+            </div>
+
+            <!-- Silent countdown indicator at the top right of the video just for tracking (transparent/subtle) -->
+            <div class="silent-timer-indicator" id="silent-timer-seconds">6</div>
+
+            <!-- Swipe Action Buttons (Simulating Native Swipes) -->
+            <div class="video-sidebar-controls">
+              <button class="control-circle-btn" id="feed-prev-btn" aria-label="Previous Video">
+                ▲
+              </button>
+              <span class="feed-index-indicator"><span id="current-video-index-num">1</span>/5</span>
+              <button class="control-circle-btn" id="feed-next-btn" aria-label="Next Video">
+                ▼
+              </button>
+            </div>
+
+            <!-- Contextual Product Card overlay (Pops up automatically after 6 seconds) -->
+            <div class="finds-product-card-overlay hidden-card" id="finds-product-card" onclick="openPdpFromFinds()">
+              <div class="card-left-img">
+                <img id="card-product-img" src="" alt="Product Card Thumbnail">
+              </div>
+              <div class="card-right-details">
+                <div class="card-badge-rating-row">
+                  <span class="card-rating-teaser" id="card-rating-teaser-text">4.6 ★</span>
+                  <span class="card-verified-teaser hidden" id="card-verified-teaser-pill">Verified</span>
+                </div>
+                <h4 id="card-product-title">Product Title</h4>
+                <div class="card-price-row">
+                  <span class="card-price" id="card-product-price">₹499</span>
+                  <span class="card-arrow">View details ➔</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Loading overlay for videos -->
+            <div id="video-loader" class="video-loader-container hidden">
+              <div class="spinner"></div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- 3. PDP VIEW CONTAINER (Enhanced Product Detail Page) -->
+        <div class="view-container hidden" id="view-pdp">
+          <div class="pdp-content" id="pdp-scroll-container">
+            
+            <!-- Split Header (Details Left, Image Right) -->
+            <div class="pdp-split-header">
+              <div class="pdp-split-info">
+                <div class="delivery-time-tag">
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" style="vertical-align: middle; margin-right: 3px;"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"></circle><polyline points="12 6 12 12 16 14" fill="none" stroke="currentColor" stroke-width="2"></polyline></svg>
+                  <span>8 MINS</span>
+                </div>
+                <h2 id="product-title" class="product-title">Product Title</h2>
+                <div class="product-pricing">
+                  <span class="current-price" id="product-price">₹499</span>
+                  <span class="mrp" id="product-mrp">₹599</span>
+                  <span class="discount" id="product-discount">17% OFF</span>
+                </div>
+                <p class="unit-size" id="product-size">Size: 4.5g</p>
+              </div>
+              
+              <div class="pdp-split-media">
+                <div class="badge-tag-overlay" id="allowlist-tag-overlay"></div>
+                <img id="product-img" src="" alt="Product Image">
+              </div>
+            </div>
+
+
+
+            <!-- Trust Layer Section -->
+            <div id="pdp-trust-section" class="pdp-trust-section">
+              
+              <!-- Skeleton Container (Initially Hidden) -->
+              <div id="pdp-skeleton" class="pdp-skeleton-container hidden">
+                <div class="skeleton-line skeleton-badge"></div>
+                <div class="skeleton-summary-grid">
+                  <div class="skeleton-box skeleton-card"></div>
+                  <div class="skeleton-box skeleton-card"></div>
+                </div>
+                <div class="skeleton-line skeleton-title"></div>
+                <div class="skeleton-box skeleton-photos-scroll"></div>
+                <div class="skeleton-line skeleton-title"></div>
+                <div class="skeleton-review-card"></div>
+              </div>
+
+              <!-- Authentic Trust Content -->
+              <div id="pdp-trust-content">
+                
+                <!-- Brand Authenticity Badge -->
+                <div id="authenticity-badge-container" class="authenticity-badge-container hidden">
+                  <div class="authenticity-badge" id="badge-element">
+                    <div class="badge-icon" id="badge-icon-element">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                    </div>
+                    <div class="badge-text">
+                      <span id="badge-brand-name">Brand Name</span>
+                      <span id="badge-tagline">Verified Authentic Brand</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Rating Summary Cards -->
+                <div class="rating-summary-grid">
+                  <div class="rating-left-card">
+                    <span class="rating-value" id="summary-avg">4.6</span>
+                    <div class="stars-row" id="summary-stars">★★★★★</div>
+                    <span class="rating-subtext" id="summary-count">3 Ratings</span>
+                  </div>
+                  <div class="rating-right-card">
+                    <div class="confidence-bar-row">
+                      <span class="confidence-label">5 ★</span>
+                      <div class="confidence-bar"><div class="confidence-bar-fill" style="width: 80%"></div></div>
+                      <span class="confidence-percent">80%</span>
+                    </div>
+                    <div class="confidence-bar-row">
+                      <span class="confidence-label">4 ★</span>
+                      <div class="confidence-bar"><div class="confidence-bar-fill" style="width: 20%"></div></div>
+                      <span class="confidence-percent">20%</span>
+                    </div>
+                    <div class="confidence-bar-row">
+                      <span class="confidence-label">3 ★</span>
+                      <div class="confidence-bar"><div class="confidence-bar-fill" style="width: 0%"></div></div>
+                      <span class="confidence-percent">0%</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Aggregate Customer Photos -->
+                <div id="customer-photos-section" class="customer-photos-section hidden">
+                  <h3>Customer Photos (<span id="photos-count">0</span>)</h3>
+                  <div class="photos-horizontal-scroll" id="customer-photos-gallery"></div>
+                </div>
+
+                <!-- Buyer Reviews Section -->
+                <div class="reviews-list-section">
+                  <h3>Genuine Reviews</h3>
+                  <div id="reviews-list-container"></div>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- Fallback Info Footer -->
+            <div class="baseline-pdp-footer">
+              <h3>Product Information</h3>
+              <p>Directly imported and distributed. Features secure packaging and strict temperature monitoring in Transit. Available for quick delivery in selected zones.</p>
+            </div>
+
+          </div>
+
+          <!-- Add to Cart Floating Footer -->
+          <div class="floating-pdp-footer">
+            <div class="price-footer">
+              <span class="price-footer-amount" id="footer-price">₹499</span>
+              <span class="price-footer-mrp" id="footer-mrp">₹599</span>
+            </div>
+            <button class="add-to-cart-btn" id="add-to-cart-action" onclick="triggerAddToCart()">
+              <span>ADD TO CART</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 4. CART & CHECKOUT SHEET VIEW CONTAINER -->
+        <div class="view-container hidden" id="view-cart">
+          <div class="cart-scroll-content">
+            <!-- Header bar -->
+            <div class="cart-header-title-bar">
+              <h3>My Cart</h3>
+              <span class="delivery-partner-alert">⚡ Standard Delivery in 12 Mins</span>
+            </div>
+
+            <!-- Item Card -->
+            <div class="cart-item-card-row">
+              <div class="cart-item-img-box">
+                <img id="cart-sheet-item-img" src="" alt="Cart Product Thumbnail">
+              </div>
+              <div class="cart-item-info">
+                <h4 id="cart-sheet-item-title">Product Title</h4>
+                <p id="cart-sheet-item-size">Size Details</p>
+                <div class="cart-qty-price-row">
+                  <span class="cart-item-price-val" id="cart-sheet-item-price">₹499</span>
+                  <div class="cart-qty-badge">1 Qty</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bill Details Grid -->
+            <div class="cart-bill-details-section">
+              <h4>Bill Details</h4>
+              <div class="bill-row">
+                <span>Item Total</span>
+                <span id="cart-bill-item-total">₹499</span>
+              </div>
+              <div class="bill-row">
+                <span>Delivery Charge</span>
+                <span class="green-text">FREE</span>
+              </div>
+              <div class="bill-row">
+                <span>Handling & Packaging Fee</span>
+                <span>₹4</span>
+              </div>
+              <div class="bill-row">
+                <span>Taxes & Gov. Surcharges</span>
+                <span>₹15</span>
+              </div>
+              <hr class="bill-divider">
+              <div class="bill-row grand-total-row">
+                <span>Grand Total</span>
+                <span id="cart-bill-grand-total">₹518</span>
+              </div>
+            </div>
+
+            <!-- Safety Banner -->
+            <div class="cart-safety-banner">
+              <span>🛡️ 100% Secure Checkout & Original Products Guaranteed.</span>
+            </div>
+          </div>
+
+          <!-- Checkout Place Order button sheet -->
+          <div class="cart-place-order-footer">
+            <div class="cart-footer-bill-summary">
+              <span class="footer-grand-total-val" id="cart-footer-grand-total">₹518</span>
+              <span class="footer-view-bill-text">View Detailed Bill</span>
+            </div>
+            <button class="place-order-action-btn" id="place-order-btn" onclick="executeCheckoutPayment()">
+              <span>Place Order & Pay ➔</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 5. CHECKOUT SUCCESS SHEET OVERLAY VIEW -->
+        <div class="view-container hidden" id="view-success">
+          <div class="success-screen-card">
+            <div class="success-check-badge">
+              <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <h2>Order Placed!</h2>
+            <p class="success-delivery-msg">Your unboxing reel item is on the way.</p>
+            
+            <div class="delivery-address-card-summary">
+              <span class="delivery-address-label">DELIVERING TO</span>
+              <span class="delivery-address-summary-text">WORK - 18th floor, 1804, T2</span>
+            </div>
+
+            <button class="continue-shopping-btn" onclick="resetAppAndReturnHome()">
+              <span>Continue Shopping</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- APP BOTTOM TAB NAVIGATION BAR -->
+        <nav class="app-tab-bar" id="app-tab-bar">
+          <button class="tab-item active" id="tab-home" onclick="switchTab('home')">
+            <div class="tab-icon">
+              <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            </div>
+            <span>Home</span>
+          </button>
+          <button class="tab-item" onclick="triggerNavToast('Order Again')">
+            <div class="tab-icon">
+              <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+            </div>
+            <span>Order Again</span>
+          </button>
+          <button class="tab-item" onclick="triggerNavToast('Categories')">
+            <div class="tab-icon">
+              <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+            </div>
+            <span>Categories</span>
+          </button>
+          <button class="tab-item" onclick="triggerNavToast('Print')">
+            <div class="tab-icon">
+              <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+            </div>
+            <span>Print</span>
+          </button>
+        </nav>
+
+        <!-- Floating district button removed and replaced with home-district-shelf -->
+
+      </div>
+    </div>
+  </main>
+
+  <footer class="app-footer-note">
+    <p>Blinkit finds sandbox client simulator. Integrates video discovery feed and trust details.</p>
+  </footer>
+
+  <script>
+    // Flag Toggles
+    const flagFindsToggle = document.getElementById('flag-finds-toggle');
+    const flagTrustToggle = document.getElementById('flag-trust-toggle');
+    const productSelect = document.getElementById('product-select');
+
+    // UI View Containers
+    const viewHome = document.getElementById('view-home');
+    const viewFinds = document.getElementById('view-finds');
+    const viewPdp = document.getElementById('view-pdp');
+    const appHeader = document.getElementById('app-header');
+    const appBackButton = document.getElementById('app-back-btn');
+    const appTabBar = document.getElementById('app-tab-bar');
+    const blinkitFindsHomeSection = document.getElementById('blinkit-finds-home-section');
+    const headerAddressContent = document.getElementById('header-address-content');
+    const floatingDistrictBtn = document.getElementById('floating-district-btn');
+
+    // Finds Video Feed variables
+    const videoPlayer = document.getElementById('finds-video-player');
+    const feedPrevBtn = document.getElementById('feed-prev-btn');
+    const feedNextBtn = document.getElementById('feed-next-btn');
+    const currentVideoIndexNum = document.getElementById('current-video-index-num');
+    const findsItemCategory = document.getElementById('finds-item-category');
+    
+    // Finds Card Overlay & Countdown elements
+    const cardProductImg = document.getElementById('card-product-img');
+    const cardRatingTeaserText = document.getElementById('card-rating-teaser-text');
+    const cardVerifiedTeaserPill = document.getElementById('card-verified-teaser-pill');
+    const cardProductTitle = document.getElementById('card-product-title');
+    const cardProductPrice = document.getElementById('card-product-price');
+    const videoLoader = document.getElementById('video-loader');
+    
+    const silentTimerSeconds = document.getElementById('silent-timer-seconds');
+    const findsProductCard = document.getElementById('finds-product-card');
+
+    // Core PDP elements
+    const pdpTrustSection = document.getElementById('pdp-trust-section');
+    const pdpTrustContent = document.getElementById('pdp-trust-content');
+    const pdpSkeleton = document.getElementById('pdp-skeleton');
+    const productImg = document.getElementById('product-img');
+    const productTitle = document.getElementById('product-title');
+    const productPrice = document.getElementById('product-price');
+    const productMrp = document.getElementById('product-mrp');
+    const productDiscount = document.getElementById('product-discount');
+    const productSize = document.getElementById('product-size');
+    const footerPrice = document.getElementById('footer-price');
+    const footerMrp = document.getElementById('footer-mrp');
+    const allowlistTagOverlay = document.getElementById('allowlist-tag-overlay');
+
+    // Dynamic PDP Trust elements
+    const badgeContainer = document.getElementById('authenticity-badge-container');
+    const badgeElement = document.getElementById('badge-element');
+    const badgeBrandName = document.getElementById('badge-brand-name');
+    const badgeTagline = document.getElementById('badge-tagline');
+    const summaryAvg = document.getElementById('summary-avg');
+    const summaryStars = document.getElementById('summary-stars');
+    const summaryCount = document.getElementById('summary-count');
+    const photosSection = document.getElementById('customer-photos-section');
+    const photosCount = document.getElementById('photos-count');
+    const photosGallery = document.getElementById('customer-photos-gallery');
+    const reviewsContainer = document.getElementById('reviews-list-container');
+
+    // App state
+    let activeTab = 'home';
+    let previousView = 'home';
+    let findsFeedItems = [];
+    let currentFeedIndex = 0;
+    
+    // 6-second silent timer variables (no skip warning)
+    let countdownIntervalId = null;
+    let secondsRemaining = 6;
+
+    // Phase 4 Analytics & Cart variables
+    let pdpOpenTime = 0;
+    let activeProductId = '';
+    let videoEngageTimeoutId = null;
+    let cartItem = null;
+    let reviewObserver = null;
+    let photoObserver = null;
+    
+    const baselineProductInfo = {
+      'p101': {
+        title: 'Glycolic Vitamin C Serum',
+        price: '₹599',
+        mrp: '₹699',
+        discount: '14% OFF',
+        size: 'Size: 30ml',
+        img: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=500&auto=format&fit=crop&q=80',
+        video: '/video/video_in_which_user_is_unboxin.mp4',
+        tag: 'BEAUTY'
+      },
+      'p102': {
+        title: 'Pet Life Waterless Shampoo',
+        price: '₹350',
+        mrp: '₹450',
+        discount: '22% OFF',
+        size: 'Size: 200ml',
+        img: 'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?w=500&auto=format&fit=crop&q=80',
+        video: '/video/1.mp4',
+        tag: 'PET CARE'
+      },
+      'p103': {
+        title: 'Copper String LED Fairy Lights',
+        price: '₹199',
+        mrp: '₹399',
+        discount: '50% OFF',
+        size: 'Size: 10 Meters / 100 LEDs',
+        img: 'https://images.unsplash.com/photo-1517263904808-5dc91e3e7044?w=500&auto=format&fit=crop&q=80',
+        video: '/video/2.mp4',
+        tag: 'ELECTRONICS'
+      },
+      'p104': {
+        title: 'Pest Killer Insecticide Spray',
+        price: '₹250',
+        mrp: '₹299',
+        discount: '16% OFF',
+        size: 'Size: 400ml',
+        img: 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=500&auto=format&fit=crop&q=80',
+        video: '/video/4.mp4',
+        tag: 'HOUSEHOLD'
+      },
+      'p105': {
+        title: 'Wireless Over-Ear Headphones',
+        price: '₹1,999',
+        mrp: '₹3,999',
+        discount: '50% OFF',
+        size: 'Color: Matte Black',
+        img: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&auto=format&fit=crop&q=80',
+        video: '/video/5.mp4',
+        tag: 'ELECTRONICS'
+      }
+    };
+
+    function makeStars(rating) {
+      const rounded = Math.round(rating);
+      return '★'.repeat(rounded) + '☆'.repeat(5 - rounded);
+    }
+
+    // Obsolete gallery slider logic removed
+
+    // Initialize config flags from toggles or mock endpoints
+    async function updateFlagsState() {
+      const findsEnabled = flagFindsToggle.checked;
+      const tabFindsButton = document.getElementById('tab-finds');
+
+      if (findsEnabled) {
+        if (tabFindsButton) tabFindsButton.style.display = 'flex';
+        blinkitFindsHomeSection.style.display = 'block';
+      } else {
+        if (tabFindsButton) tabFindsButton.style.display = 'none';
+        blinkitFindsHomeSection.style.display = 'none';
+        if (activeTab === 'finds') {
+          switchTab('home');
+        }
+      }
+    }
+
+    // Switch Bottom Tabs
+    function switchTab(tabName) {
+      if (tabName === 'finds' && !flagFindsToggle.checked) return;
+
+      activeTab = tabName;
+      previousView = tabName;
+      
+      // Update Active Navigation Tab state
+      const tabHomeBtn = document.getElementById('tab-home');
+      if (tabHomeBtn) tabHomeBtn.classList.toggle('active', tabName === 'home');
+      const tabFindsBtn = document.getElementById('tab-finds');
+      if (tabFindsBtn) tabFindsBtn.classList.toggle('active', tabName === 'finds');
+
+      // Toggle Views
+      viewHome.classList.toggle('hidden', tabName !== 'home');
+      viewFinds.classList.toggle('hidden', tabName !== 'finds');
+      viewPdp.classList.add('hidden');
+      
+      // Toggle Headers
+      appHeader.style.display = 'flex';
+      headerAddressContent.style.display = tabName === 'home' ? 'flex' : 'none';
+      appBackButton.style.display = 'none';
+      appTabBar.style.display = 'flex';
+      if (floatingDistrictBtn) floatingDistrictBtn.style.display = tabName === 'home' ? 'flex' : 'none';
+
+      if (tabName === 'finds') {
+        appHeader.style.display = 'none'; // Completely full-screen for Finds
+        logAnalyticsEvent('finds_feed_open');
+        loadFindsFeed();
+      } else {
+        videoPlayer.pause();
+        stopCountdownTimer();
+      }    }
+
+    // Direct link to launch Finds Feed from home tray
+    async function launchVideoDirect(feedIndex) {
+      switchTab('finds');
+      // Wait for feed items to be fetched, then render selected index
+      videoLoader.classList.remove('hidden');
+      try {
+        const response = await fetch('/v1/finds/feed');
+        const data = await response.json();
+        findsFeedItems = data.data;
+        if (findsFeedItems.length > feedIndex) {
+          renderFeedItem(feedIndex);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        videoLoader.classList.add('hidden');
+      }
+    }
+
+    // Load Finds Feed from API
+    async function loadFindsFeed() {
+      videoLoader.classList.remove('hidden');
+      try {
+        const response = await fetch('/v1/finds/feed');
+        const data = await response.json();
+        
+        findsFeedItems = data.data;
+        if (findsFeedItems.length > 0) {
+          currentFeedIndex = 0;
+          renderFeedItem(currentFeedIndex);
+        }
+      } catch (err) {
+        console.error('Error fetching Finds feed:', err);
+      } finally {
+        videoLoader.classList.add('hidden');
+      }
+    }
+
+    // Render active Finds Video item & start 6s timer
+    async function renderFeedItem(index) {
+      if (index < 0 || index >= findsFeedItems.length) return;
+      
+      currentFeedIndex = index;
+      const item = findsFeedItems[index];
+
+      currentVideoIndexNum.textContent = index + 1;
+      findsItemCategory.textContent = item.category.toUpperCase().replace('_', ' ');
+
+      // Set video source and play
+      videoPlayer.src = item.video_url;
+      videoPlayer.style.opacity = '0.3';
+      
+      videoPlayer.load();
+      videoPlayer.oncanplay = () => {
+        videoPlayer.style.opacity = '1';
+        videoPlayer.play().catch(e => console.warn('Autoplay blocked:', e));
+      };
+
+      // Set Product Card info
+      cardProductTitle.textContent = item.product_title;
+      cardProductPrice.textContent = `₹${item.product_price}`;
+      
+      const baseline = baselineProductInfo[item.product_id] || baselineProductInfo['p101'];
+      cardProductImg.src = baseline.img;
+
+      // Reset Card ratings/badge teaser
+      cardRatingTeaserText.textContent = '... ★';
+      cardVerifiedTeaserPill.classList.add('hidden');
+
+      // Lazy load PDP details to enrich card teaser
+      try {
+        const res = await fetch(`/v1/trust/products/${item.product_id}`);
+        if (res.ok) {
+          const trustData = await res.json();
+          cardRatingTeaserText.textContent = `${trustData.rating_summary.average_rating} ★ (${trustData.rating_summary.total_reviews})`;
+          if (trustData.authenticity_badge && trustData.rating_summary.total_reviews >= 3) {
+            cardVerifiedTeaserPill.classList.remove('hidden');
+            cardVerifiedTeaserPill.textContent = trustData.authenticity_badge.badge_type === 'genuine_100' ? '100% Genuine' : 'Verified';
+          } else {
+            cardVerifiedTeaserPill.classList.add('hidden');
+          }
+        }
+      } catch (e) {
+        cardRatingTeaserText.textContent = '';
+      }
+
+      // Log finds_video_impression
+      logAnalyticsEvent('finds_video_impression', {
+        feed_index: index,
+        product_id: item.product_id,
+        video_url: item.video_url
+      });
+
+      // Log finds_video_engage after 3 seconds of dwell time
+      if (videoEngageTimeoutId) clearTimeout(videoEngageTimeoutId);
+      videoEngageTimeoutId = setTimeout(() => {
+        logAnalyticsEvent('finds_video_engage', {
+          feed_index: index,
+          product_id: item.product_id
+        });
+      }, 3000);
+
+      // Start silent 6-second countdown timer for product card overlay
+      startCountdownTimer();
+    }
+
+    // Timer Controls
+    function startCountdownTimer() {
+      stopCountdownTimer(); // Clear any existing timers
+
+      secondsRemaining = 6;
+      findsProductCard.className = 'finds-product-card-overlay hidden-card'; // Slide card down / hide
+      silentTimerSeconds.style.display = 'block';
+      silentTimerSeconds.textContent = secondsRemaining;
+
+      countdownIntervalId = setInterval(() => {
+        secondsRemaining--;
+        silentTimerSeconds.textContent = secondsRemaining;
+
+        if (secondsRemaining <= 0) {
+          revealProductCard();
+        }
+      }, 1000);
+    }
+
+    function stopCountdownTimer() {
+      if (countdownIntervalId) {
+        clearInterval(countdownIntervalId);
+        countdownIntervalId = null;
+      }
+    }
+
+    function revealProductCard() {
+      stopCountdownTimer();
+      silentTimerSeconds.style.display = 'none';
+      findsProductCard.className = 'finds-product-card-overlay active-card'; // Slide card up / show
+      
+      const item = findsFeedItems[currentFeedIndex];
+      if (item) {
+        logAnalyticsEvent('finds_product_card_view', { product_id: item.product_id });
+      }
+    }
+
+    // Swipe navigation buttons
+    feedPrevBtn.onclick = (e) => {
+      e.stopPropagation();
+      if (currentFeedIndex > 0) renderFeedItem(currentFeedIndex - 1);
+    };
+
+    feedNextBtn.onclick = (e) => {
+      e.stopPropagation();
+      if (currentFeedIndex < findsFeedItems.length - 1) renderFeedItem(currentFeedIndex + 1);
+    };
+
+    // Open PDP from Finds Feed card
+    function openPdpFromFinds() {
+      const activeItem = findsFeedItems[currentFeedIndex];
+      if (activeItem) {
+        logAnalyticsEvent('finds_product_card_click', { product_id: activeItem.product_id });
+        openPdp(activeItem.product_id, 'finds');
+      }
+    }
+
+    // Open PDP from Home categories
+    function openPdpDirect(productId) {
+      openPdp(productId, 'home');
+    }
+
+    // Dynamic PDP loader (Phase 2 & 3 Integration)
+    async function openPdp(productId, sourceView) {
+      previousView = sourceView;
+      videoPlayer.pause();
+      stopCountdownTimer();
+
+      // Set Phase 4 Analytics variables
+      pdpOpenTime = Date.now();
+      activeProductId = productId;
+      logAnalyticsEvent('pdp_view', { product_id: productId, source_view: sourceView });
+
+      // Show View PDP
+      viewHome.classList.add('hidden');
+      viewFinds.classList.add('hidden');
+      viewPdp.classList.remove('hidden');
+
+      // Update Header Back navigation
+      appHeader.style.display = 'flex';
+      headerAddressContent.style.display = 'none';
+      appBackButton.style.display = 'flex';
+      appTabBar.style.display = 'none';
+      if (floatingDistrictBtn) floatingDistrictBtn.style.display = 'none';
+
+      // Load product details
+      const baseline = baselineProductInfo[productId] || baselineProductInfo['p101'];
+      productImg.src = baseline.img;
+      
+      productTitle.textContent = baseline.title;
+      productPrice.textContent = baseline.price;
+      productMrp.textContent = baseline.mrp;
+      productDiscount.textContent = baseline.discount;
+      productSize.textContent = baseline.size;
+      footerPrice.textContent = baseline.price;
+      footerMrp.textContent = baseline.mrp;
+
+      allowlistTagOverlay.style.display = 'none';
+      
+      // Toggle PDP Trust Layer based on Flag status
+      const trustEnabled = flagTrustToggle.checked;
+      
+      if (!trustEnabled || productId === 'fail') {
+        // Fallback baseline layout
+        pdpTrustSection.style.display = 'none';
+        if (productId === 'fail') showFailureToast();
+        return;
+      }
+
+      // Show skeleton and load trust layer
+      pdpTrustSection.style.display = 'block';
+      pdpTrustContent.classList.add('hidden');
+      pdpSkeleton.classList.remove('hidden');
+
+      // Fetch dynamic details
+      try {
+        const response = await fetch(`/v1/trust/products/${productId}`);
+        const data = await response.json();
+
+        // Render Badge
+        // Render Badge (Only show if total_reviews >= 3 to avoid thin social proof risk)
+        if (data.authenticity_badge && data.rating_summary.total_reviews >= 3) {
+          badgeContainer.classList.remove('hidden');
+          badgeBrandName.textContent = data.authenticity_badge.brand_name;
+          if (data.authenticity_badge.badge_type === 'genuine_100') {
+            badgeElement.className = 'authenticity-badge gold-badge';
+            badgeTagline.textContent = '100% Genuine Guaranteed';
+            allowlistTagOverlay.textContent = '100% GENUINE';
+            allowlistTagOverlay.className = 'badge-tag-overlay gold-tag';
+          } else {
+            badgeElement.className = 'authenticity-badge verified-badge';
+            badgeTagline.textContent = 'Verified Authentic Brand';
+            allowlistTagOverlay.textContent = 'VERIFIED';
+            allowlistTagOverlay.className = 'badge-tag-overlay green-tag';
+          }
+          allowlistTagOverlay.style.display = 'block';
+
+          // Emit authenticity_badge_view
+          logAnalyticsEvent('authenticity_badge_view', {
+            product_id: productId,
+            brand_name: data.authenticity_badge.brand_name,
+            badge_type: data.authenticity_badge.badge_type
+          });
+
+          // Add click event for badge
+          badgeElement.onclick = () => {
+            logAnalyticsEvent('authenticity_badge_click', {
+              product_id: productId,
+              brand_name: data.authenticity_badge.brand_name
+            });
+          };
+        } else {
+          badgeContainer.classList.add('hidden');
+          allowlistTagOverlay.style.display = 'none';
+        }
+
+        // Render Rating
+        summaryAvg.textContent = data.rating_summary.average_rating || '0';
+        summaryStars.textContent = makeStars(data.rating_summary.average_rating || 0);
+        summaryCount.textContent = `${data.rating_summary.total_reviews} Rating${data.rating_summary.total_reviews !== 1 ? 's' : ''}`;
+
+        // Render Photos
+        if (data.customer_photos && data.customer_photos.length > 0) {
+          photosSection.classList.remove('hidden');
+          photosCount.textContent = data.customer_photos.length;
+          photosGallery.innerHTML = data.customer_photos.map(url => `
+            <div class="user-photo-card"><img src="${url}" alt="User Photo"></div>
+          `).join('');
+        } else {
+          photosSection.classList.add('hidden');
+        }
+
+        // Render Reviews
+        if (data.reviews && data.reviews.length > 0) {
+          reviewsContainer.innerHTML = data.reviews.map(r => `
+            <div class="review-item">
+              <div class="review-header">
+                <span class="review-stars">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span>
+                <span class="review-date">${new Date(r.created_at).toLocaleDateString()}</span>
+              </div>
+              <div class="buyer-verify-badge">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.5 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                <span>${r.verified_buyer ? 'Verified Purchase' : 'Guest Buyer'}</span>
+              </div>
+              <p class="review-text">${r.text || 'No comment.'}</p>
+              ${r.photos && r.photos.length > 0 ? `
+                <div class="review-images">
+                  ${r.photos.map(p => `<img src="${p}" alt="Review photo">`).join('')}
+                </div>
+              ` : ''}
+            </div>
+          `).join('');
+        } else {
+          reviewsContainer.innerHTML = '<p class="empty-reviews">No reviews.</p>';
+        }
+
+      } catch (err) {
+        console.error('Error fetching trust details:', err);
+        pdpTrustSection.style.display = 'none';
+        showFailureToast();
+      } finally {
+        pdpSkeleton.classList.add('hidden');
+        pdpTrustContent.classList.remove('hidden');
+      }
+
+      // Setup Scroll Observers for reviews list and customer photos section
+      if (reviewObserver) reviewObserver.disconnect();
+      if (photoObserver) photoObserver.disconnect();
+
+      let reviewObserved = false;
+      let photosObserved = false;
+      const pdpScrollContainer = document.getElementById('pdp-scroll-container');
+
+      reviewObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting && !reviewObserved) {
+            reviewObserved = true;
+            logAnalyticsEvent('review_list_view', { product_id: productId });
+          }
+        });
+      }, { root: pdpScrollContainer, threshold: 0.1 });
+
+      photoObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting && !photosObserved) {
+            photosObserved = true;
+            logAnalyticsEvent('customer_photo_view', { product_id: productId });
+          }
+        });
+      }, { root: pdpScrollContainer, threshold: 0.1 });
+
+      if (reviewsContainer) reviewObserver.observe(reviewsContainer);
+      if (photosSection) photoObserver.observe(photosSection);
+    }
+
+    // Back navigation mapping
+    appBackButton.onclick = () => {
+      // If we are backing out of Cart, go back to PDP
+      if (previousView === 'cart') {
+        viewCart.classList.add('hidden');
+        viewPdp.classList.remove('hidden');
+        previousView = 'finds'; // restore state
+        appTabBar.style.display = 'none';
+        
+        // Re-display add-to-cart launcher if cartItem exists
+        if (cartItem) {
+          triggerAddToCart(); // re-adds bottom float bar
+        }
+        return;
+      }
+
+      // If we are backing out of PDP, track time spent
+      if (!viewPdp.classList.contains('hidden') && pdpOpenTime > 0) {
+        const secondsSpent = Math.round((Date.now() - pdpOpenTime) / 1000);
+        logAnalyticsEvent('pdp_time_spent', {
+          product_id: activeProductId,
+          seconds_spent: secondsSpent
+        });
+        pdpOpenTime = 0; // reset
+      }
+
+      // Remove PDP floating cart alert if any
+      const alertBox = document.getElementById('pdp-cart-alert');
+      if (alertBox) alertBox.remove();
+
+      if (previousView === 'finds') {
+        switchTab('finds');
+      } else {
+        switchTab('home');
+      }
+    };
+
+    // Cart views & analytics actions
+    const viewCart = document.getElementById('view-cart');
+    const viewSuccess = document.getElementById('view-success');
+
+    function triggerAddToCart() {
+      const activeId = activeProductId || 'p101';
+      logAnalyticsEvent('add_to_cart', { product_id: activeId });
+
+      const baseline = baselineProductInfo[activeId] || baselineProductInfo['p101'];
+      
+      // Update Cart state
+      cartItem = {
+        id: activeId,
+        title: baseline.title,
+        price: parseInt(baseline.price.replace('₹', '').replace(',', '')),
+        size: baseline.size,
+        img: baseline.img
+      };
+
+      // Show floating Cart banner overlaying the PDP
+      let alertBox = document.getElementById('pdp-cart-alert');
+      if (!alertBox) {
+        alertBox = document.createElement('div');
+        alertBox.id = 'pdp-cart-alert';
+        alertBox.className = 'floating-pdp-cart-alert';
+        alertBox.onclick = () => openCartSheet();
+        document.getElementById('view-pdp').appendChild(alertBox);
+      }
+      alertBox.innerHTML = `
+        <div class="cart-alert-left">
+          <span>🛒 1 Item in Basket</span>
+        </div>
+        <span class="cart-alert-btn-text">View Cart ➔</span>
+      `;
+      
+      // Show native toast
+      const toast = document.createElement('div');
+      toast.className = 'native-toast';
+      toast.textContent = 'Product added to Blinkit basket!';
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.classList.add('fade-out');
+        setTimeout(() => toast.remove(), 500);
+      }, 1500);
+    }
+
+    function openCartSheet() {
+      if (!cartItem) return;
+      
+      // Hide PDP cart alert if visible
+      const alertBox = document.getElementById('pdp-cart-alert');
+      if (alertBox) alertBox.remove();
+
+      // Switch view
+      viewPdp.classList.add('hidden');
+      viewCart.classList.remove('hidden');
+      
+      // Populate details
+      document.getElementById('cart-sheet-item-img').src = cartItem.img;
+      document.getElementById('cart-sheet-item-title').textContent = cartItem.title;
+      document.getElementById('cart-sheet-item-size').textContent = cartItem.size;
+      document.getElementById('cart-sheet-item-price').textContent = `₹${cartItem.price}`;
+      document.getElementById('cart-bill-item-total').textContent = `₹${cartItem.price}`;
+      
+      const grandTotal = cartItem.price + 4 + 15; // Price + Packaging + Taxes
+      document.getElementById('cart-bill-grand-total').textContent = `₹${grandTotal}`;
+      document.getElementById('cart-footer-grand-total').textContent = `₹${grandTotal}`;
+
+      // Adjust headers
+      appHeader.style.display = 'flex';
+      headerAddressContent.style.display = 'none';
+      appBackButton.style.display = 'flex';
+      appTabBar.style.display = 'none';
+      if (floatingDistrictBtn) floatingDistrictBtn.style.display = 'none';
+      
+      previousView = 'cart';
+    }
+
+    function executeCheckoutPayment() {
+      const payBtn = document.getElementById('place-order-btn');
+      payBtn.disabled = true;
+      payBtn.innerHTML = 'Placing Order...';
+
+      setTimeout(() => {
+        // Success navigation
+        viewCart.classList.add('hidden');
+        viewSuccess.classList.remove('hidden');
+        appHeader.style.display = 'none'; // completely fullscreen on success
+        
+        logAnalyticsEvent('purchase_complete', {
+          product_id: cartItem.id,
+          item_total: cartItem.price,
+          grand_total: cartItem.price + 4 + 15
+        });
+
+        // Reset button state
+        payBtn.disabled = false;
+        payBtn.innerHTML = 'Place Order & Pay ➔';
+      }, 1500);
+    }
+
+    function resetAppAndReturnHome() {
+      // Clear Cart state
+      cartItem = null;
+      
+      // Hide success screen and return to Home
+      viewSuccess.classList.add('hidden');
+      switchTab('home');
+    }
+
+    function triggerNavToast(tabName) {
+      const toast = document.createElement('div');
+      toast.className = 'native-toast';
+      toast.textContent = `${tabName} tab is a mockup section!`;
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.classList.add('fade-out');
+        setTimeout(() => toast.remove(), 500);
+      }, 2000);
+    }
+
+    function showFailureToast() {
+      const toast = document.createElement('div');
+      toast.className = 'native-toast';
+      toast.textContent = 'Connection failed. Showing baseline catalog details.';
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.classList.add('fade-out');
+        setTimeout(() => toast.remove(), 500);
+      }, 3000);
+    }
+
+    // Analytics logging helpers
+    function logAnalyticsEvent(eventName, properties = {}) {
+      const logList = document.getElementById('analytics-log-list');
+      if (!logList) return;
+      
+      // Remove placeholder message
+      const placeholder = logList.querySelector('.log-placeholder-msg');
+      if (placeholder) placeholder.remove();
+
+      const timestamp = new Date().toLocaleTimeString();
+      const sessionProperties = {
+        user_id: 'usr_839521',
+        session_id: 'sess_9938210',
+        experiment_variant: flagTrustToggle.checked ? 'treatment_enhanced_trust' : 'control_baseline',
+        app_platform: 'Android',
+        app_version: 'v12.4.2',
+        timestamp: new Date().toISOString(),
+        ...properties
+      };
+
+      const logRow = document.createElement('div');
+      logRow.className = 'log-row';
+      logRow.innerHTML = `
+        <span class="log-timestamp">[${timestamp}]</span>
+        <span class="log-event-name">${eventName}</span>: 
+        <span class="log-properties">${JSON.stringify(sessionProperties)}</span>
+      `;
+      logList.appendChild(logRow);
+      logList.scrollTop = logList.scrollHeight; // Auto-scroll
+      console.log(`[Analytics Event] ${eventName}:`, sessionProperties);
+    }
+
+    function clearAnalyticsLog() {
+      const logList = document.getElementById('analytics-log-list');
+      if (logList) {
+        logList.innerHTML = '<div class="log-placeholder-msg">Events pipeline is listening... Navigate the sandbox to emit events.</div>';
+      }
+    }
+
+    // Dynamic Select launch from selector
+    productSelect.addEventListener('change', (e) => {
+      openPdp(e.target.value, 'home');
+    });
+
+    // Toggle Flag listeners
+    flagFindsToggle.addEventListener('change', updateFlagsState);
+    flagTrustToggle.addEventListener('change', () => {
+      // Re-trigger PDP render if PDP is currently active
+      if (!viewPdp.classList.contains('hidden')) {
+        const activeSelectVal = productSelect.value;
+        openPdp(activeSelectVal, previousView);
+      }
+    });
+
+    // Initial setups
+    updateFlagsState();
+    switchTab('home');
+  </script>
+</body>
+</html>
