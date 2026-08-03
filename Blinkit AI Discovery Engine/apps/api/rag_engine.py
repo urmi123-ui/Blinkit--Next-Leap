@@ -2,6 +2,7 @@ import os
 import json
 import sqlite3
 from typing import List, Dict, Any, Optional
+from concurrent.futures import ThreadPoolExecutor
 from groq import Groq
 from dotenv import load_dotenv
 
@@ -32,12 +33,32 @@ def get_groq_client():
 
 def normalize_citation_id(cid: Any) -> str:
     cid_str = str(cid).strip()
-    cid_str_lower = cid_str.lower()
-    for prefix in ["review id:", "review id", "rev-", "rev", "#"]:
-        if cid_str_lower.startswith(prefix):
-            cid_str = cid_str[len(prefix):].strip()
-            cid_str_lower = cid_str.lower()
+    while True:
+        cid_str_lower = cid_str.lower()
+        stripped_any = False
+        for prefix in ["review id:", "review id", "rev-", "rev", "#"]:
+            if cid_str_lower.startswith(prefix):
+                cid_str = cid_str[len(prefix):].strip()
+                stripped_any = True
+                break
+        if not stripped_any:
+            break
     return cid_str
+
+def resolve_retrieved_citation_id(cid: str, retrieved_lookup: dict) -> str:
+    # 1. Exact match
+    if cid in retrieved_lookup:
+        return cid
+    # 2. Match with suffix (e.g. "409" -> "409_2")
+    for key in retrieved_lookup:
+        if key.startswith(cid + "_"):
+            return key
+    # 3. Match without suffix (e.g. "409_2" -> "409")
+    if "_" in cid:
+        base_id = cid.split("_")[0]
+        if base_id in retrieved_lookup:
+            return base_id
+    return cid
 
 def validate_insights_quality(res_data: dict, retrieved_reviews: list, client, model_name: str) -> tuple:
     """
@@ -52,7 +73,7 @@ def validate_insights_quality(res_data: dict, retrieved_reviews: list, client, m
     check_index = 1
     
     # Track citation mappings to easily filter them later
-    # key: check_id, value: (claim_type, list_index, citation_value)
+    # key: check_id, value: (claim_type, list_index, resolved_citation_value)
     check_mappings = {}
     
     # Themes
@@ -61,17 +82,18 @@ def validate_insights_quality(res_data: dict, retrieved_reviews: list, client, m
         theme_desc = theme.get("description") or ""
         for c_idx, cid in enumerate(theme.get("citations", [])):
             cid_str = normalize_citation_id(cid)
-            if cid_str in retrieved_lookup:
+            resolved_id = resolve_retrieved_citation_id(cid_str, retrieved_lookup)
+            if resolved_id in retrieved_lookup:
                 check_id = f"chk_{check_index}"
                 checks.append({
                     "check_id": check_id,
-                    "review_id": cid_str,
-                    "review_text": retrieved_lookup[cid_str],
+                    "review_id": resolved_id,
+                    "review_text": retrieved_lookup[resolved_id],
                     "claim_type": "theme",
                     "claim_name": theme_name,
                     "claim_details": theme_desc
                 })
-                check_mappings[check_id] = ("theme", t_idx, c_idx, cid)
+                check_mappings[check_id] = ("theme", t_idx, c_idx, resolved_id)
                 check_index += 1
 
     # Barriers
@@ -79,17 +101,18 @@ def validate_insights_quality(res_data: dict, retrieved_reviews: list, client, m
         barrier_name = barrier.get("barrier") or "Unknown Barrier"
         for c_idx, cid in enumerate(barrier.get("citations", [])):
             cid_str = normalize_citation_id(cid)
-            if cid_str in retrieved_lookup:
+            resolved_id = resolve_retrieved_citation_id(cid_str, retrieved_lookup)
+            if resolved_id in retrieved_lookup:
                 check_id = f"chk_{check_index}"
                 checks.append({
                     "check_id": check_id,
-                    "review_id": cid_str,
-                    "review_text": retrieved_lookup[cid_str],
+                    "review_id": resolved_id,
+                    "review_text": retrieved_lookup[resolved_id],
                     "claim_type": "barrier",
                     "claim_name": barrier_name,
                     "claim_details": f"Category exploration barrier: {barrier_name}"
                 })
-                check_mappings[check_id] = ("barrier", b_idx, c_idx, cid)
+                check_mappings[check_id] = ("barrier", b_idx, c_idx, resolved_id)
                 check_index += 1
 
     # Personas
@@ -98,17 +121,18 @@ def validate_insights_quality(res_data: dict, retrieved_reviews: list, client, m
         persona_beh = persona.get("behavior_summary") or ""
         for c_idx, cid in enumerate(persona.get("citations", [])):
             cid_str = normalize_citation_id(cid)
-            if cid_str in retrieved_lookup:
+            resolved_id = resolve_retrieved_citation_id(cid_str, retrieved_lookup)
+            if resolved_id in retrieved_lookup:
                 check_id = f"chk_{check_index}"
                 checks.append({
                     "check_id": check_id,
-                    "review_id": cid_str,
-                    "review_text": retrieved_lookup[cid_str],
+                    "review_id": resolved_id,
+                    "review_text": retrieved_lookup[resolved_id],
                     "claim_type": "persona",
                     "claim_name": persona_name,
                     "claim_details": persona_beh
                 })
-                check_mappings[check_id] = ("persona", p_idx, c_idx, cid)
+                check_mappings[check_id] = ("persona", p_idx, c_idx, resolved_id)
                 check_index += 1
 
     # Fallback/Default outputs if no checks to perform
@@ -146,9 +170,12 @@ def validate_insights_quality(res_data: dict, retrieved_reviews: list, client, m
     warnings = []
     
     BATCH_SIZE = 3
-    for i in range(0, len(checks), BATCH_SIZE):
-        batch = checks[i:i + BATCH_SIZE]
-        
+    batches = [checks[i:i + BATCH_SIZE] for i in range(0, len(checks), BATCH_SIZE)]
+    total_batches = len(batches)
+
+    def audit_batch(batch, batch_index, total):
+        batch_invalid = set()
+        batch_warnings = []
         checks_str = ""
         for c in batch:
             checks_str += (
@@ -161,7 +188,7 @@ def validate_insights_quality(res_data: dict, retrieved_reviews: list, client, m
             )
 
         user_prompt = (
-            f"Please audit the following {len(batch)} citations (batch {i // BATCH_SIZE + 1} of {(len(checks) - 1) // BATCH_SIZE + 1}) and verify their validity:\n\n"
+            f"Please audit the following {len(batch)} citations (batch {batch_index} of {total}) and verify their validity:\n\n"
             f"{checks_str}"
         )
 
@@ -192,16 +219,32 @@ def validate_insights_quality(res_data: dict, retrieved_reviews: list, client, m
                 reason = res.get("reason", "")
                 
                 if not is_valid:
-                    invalid_checks.add(chk_id)
+                    batch_invalid.add(chk_id)
                     mapping = check_mappings.get(chk_id)
                     if mapping:
                         claim_type, _, _, cid = mapping
-                        warnings.append(
+                        batch_warnings.append(
                             f"Citation verification rejected review #{cid} for {claim_type} claim: {reason}"
                         )
         except Exception as e:
-            print(f"[validator] Warning: Quality validation batch failed for indices {i} to {i+len(batch)-1}:", str(e))
-            warnings.append(f"Audit verification request failed for a batch of citations: {str(e)}")
+            print(f"[validator] Warning: Quality validation batch failed for indices: {[c['check_id'] for c in batch]}:", str(e))
+            batch_warnings.append(f"Audit verification request failed for a batch of citations: {str(e)}")
+
+        return batch_invalid, batch_warnings
+
+    if batches:
+        with ThreadPoolExecutor(max_workers=min(total_batches, 5)) as executor:
+            futures = [
+                executor.submit(audit_batch, batch, idx + 1, total_batches)
+                for idx, batch in enumerate(batches)
+            ]
+            for future in futures:
+                try:
+                    batch_invalid, batch_warnings = future.result()
+                    invalid_checks.update(batch_invalid)
+                    warnings.extend(batch_warnings)
+                except Exception as e:
+                    warnings.append(f"Audit verification task failed: {str(e)}")
 
     # 3. Apply changes and filter invalid citations
     total_citations_checked = len(checks)
@@ -213,15 +256,16 @@ def validate_insights_quality(res_data: dict, retrieved_reviews: list, client, m
     for t_idx, theme in enumerate(res_data.get("key_themes", [])):
         new_cits = []
         for c_idx, cid in enumerate(theme.get("citations", [])):
-            cid_str = normalize_citation_id(cid)
             check_id = None
+            resolved_id = None
             for chk, map_val in check_mappings.items():
                 if map_val[0] == "theme" and map_val[1] == t_idx and map_val[2] == c_idx:
                     check_id = chk
+                    resolved_id = map_val[3]
                     break
             
             if check_id and check_id not in invalid_checks:
-                new_cits.append(cid_str)
+                new_cits.append(resolved_id)
                 
         if new_cits:
             theme["citations"] = new_cits
@@ -235,14 +279,15 @@ def validate_insights_quality(res_data: dict, retrieved_reviews: list, client, m
     for b_idx, barrier in enumerate(res_data.get("barriers", [])):
         new_cits = []
         for c_idx, cid in enumerate(barrier.get("citations", [])):
-            cid_str = normalize_citation_id(cid)
             check_id = None
+            resolved_id = None
             for chk, map_val in check_mappings.items():
                 if map_val[0] == "barrier" and map_val[1] == b_idx and map_val[2] == c_idx:
                     check_id = chk
+                    resolved_id = map_val[3]
                     break
             if check_id and check_id not in invalid_checks:
-                new_cits.append(cid_str)
+                new_cits.append(resolved_id)
                 
         if new_cits:
             barrier["citations"] = new_cits
@@ -256,14 +301,15 @@ def validate_insights_quality(res_data: dict, retrieved_reviews: list, client, m
     for p_idx, persona in enumerate(res_data.get("persona_insights", [])):
         new_cits = []
         for c_idx, cid in enumerate(persona.get("citations", [])):
-            cid_str = normalize_citation_id(cid)
             check_id = None
+            resolved_id = None
             for chk, map_val in check_mappings.items():
                 if map_val[0] == "persona" and map_val[1] == p_idx and map_val[2] == c_idx:
                     check_id = chk
+                    resolved_id = map_val[3]
                     break
             if check_id and check_id not in invalid_checks:
-                new_cits.append(cid_str)
+                new_cits.append(resolved_id)
                 
         if new_cits:
             persona["citations"] = new_cits
@@ -328,6 +374,63 @@ def query_rag(request: QueryRequest) -> InsightResponse:
     # Calculate average retrieval distance
     avg_distance = sum(distances) / len(distances) if distances else 0.0
 
+    # Phase 6 / Custom: Supplement with representative reviews and stats of top barriers
+    stats_str = ""
+    try:
+        db_stats = database.get_database_stats()
+        top_barriers = db_stats.get("barriers", [])[:5]  # Top 5 barriers
+        top_personas = db_stats.get("personas", [])[:5]  # Top 5 personas
+        
+        stats_str = "DATABASE-WIDE METRICS / STATISTICS:\n"
+        stats_str += f"- Total reviews in database: {db_stats.get('total_reviews', 0)}\n"
+        stats_str += "- Top 5 category exploration barriers by occurrence:\n"
+        for idx, b in enumerate(top_barriers):
+            stats_str += f"  - {b['name']}: {b['count']} reviews\n"
+        stats_str += "- Top 5 shopper personas by occurrence:\n"
+        for idx, p in enumerate(top_personas):
+            stats_str += f"  - {p['name']}: {p['count']} reviews\n"
+            
+        # Fetch representative reviews for the top barriers
+        top_barrier_names = [b["name"] for b in top_barriers]
+        if top_barrier_names:
+            conn = database.get_connection()
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            placeholders = ",".join(["?"] * len(top_barrier_names))
+            cursor.execute(f"""
+                SELECT review_id, review, problem, pain_point, product_area, 
+                       shopping_goal, barrier_to_new_category, user_persona, 
+                       emotion, frequency, priority, recommended_action
+                FROM reviews
+                WHERE barrier_to_new_category IN ({placeholders})
+                GROUP BY barrier_to_new_category
+            """, top_barrier_names)
+            rep_rows = [dict(r) for r in cursor.fetchall()]
+            conn.close()
+            
+            # Append representative reviews if they are not already retrieved
+            for r in rep_rows:
+                rid = r["review_id"]
+                if rid not in retrieved_ids:
+                    chunk_str = indexer.build_review_chunk(r)
+                    retrieved_reviews.append({
+                        "review_id": rid,
+                        "chunk": chunk_str,
+                        "metadata": {
+                            "review_id": rid,
+                            "product_area": r["product_area"] or "None",
+                            "user_persona": r["user_persona"] or "None",
+                            "barrier_to_new_category": r["barrier_to_new_category"] or "None",
+                            "priority": r["priority"] or "None",
+                            "frequency": r["frequency"] or "None",
+                            "emotion": r["emotion"] or "None"
+                        },
+                        "distance": 1.0
+                    })
+                    retrieved_ids.add(rid)
+    except Exception as e:
+        print("Failed to fetch database stats and representative reviews:", str(e))
+
     # 3. Direct Fallback if No Context Exists
     if not retrieved_reviews:
         return InsightResponse(
@@ -379,13 +482,15 @@ def query_rag(request: QueryRequest) -> InsightResponse:
 
     system_prompt = (
         "You are an expert product research analyst for Blinkit, a quick-commerce application.\n"
-        "Your task is to answer user questions based ONLY on the provided customer review records.\n\n"
+        "Your task is to answer user questions based ONLY on the provided customer review records and database statistics.\n\n"
         "GROUNDING LAWS:\n"
-        "1. Base your answer strictly on the reviews provided. Do not use external or general knowledge.\n"
+        "1. Base your answer strictly on the reviews and database-wide metrics provided. Do not use external or general knowledge.\n"
         "2. Do not invent any customer themes, personas, barriers, or recommendations.\n"
-        "3. Every claim or segment analysis must cite the specific Review ID from the context.\n"
+        "3. Every claim or segment analysis must cite the specific Review ID from the context. If you reference a dominant barrier from the database statistics, you MUST cite its representative Review ID from the context.\n"
         "4. If the retrieved reviews contain thin, conflicting, or irrelevant feedback to answer the user's question, "
         "classify the 'evidence_quality' as 'weak' or 'insufficient', and state that clearly in the summary.\n\n"
+        "DATABASE STATS LAW:\n"
+        "If the user asks a general or macro-level question (e.g. why users don't explore new categories, dominant barriers, shopper segment sizes, overall issues), you MUST prioritize the provided DATABASE-WIDE METRICS / STATISTICS to order and list the barriers/personas correctly (e.g. 'Lack of trust' and 'Lack of trust in customer support' as the primary barriers). Use the representative reviews in the context to cite your findings.\n\n"
         "OUTPUT FORMAT CONSTRAINT:\n"
         "You must respond with a single JSON object. Do not include markdown code block backticks (like ```json). "
         "The JSON object must match this schema exactly:\n"
@@ -394,8 +499,10 @@ def query_rag(request: QueryRequest) -> InsightResponse:
 
     user_prompt = (
         f"USER QUESTION: {question}\n\n"
-        f"RETRIEVED REVIEWS CONTEXT:\n{context_str}\n"
     )
+    if stats_str:
+        user_prompt += f"{stats_str}\n\n"
+    user_prompt += f"RETRIEVED REVIEWS CONTEXT:\n{context_str}\n"
 
     # 5. Call Groq Completions API
     try:
@@ -442,19 +549,26 @@ def query_rag(request: QueryRequest) -> InsightResponse:
 
     # 6. Validate and Map Citations to SQLite Document Store
     unique_cited_ids = set()
+    retrieved_lookup = {r["review_id"]: r["chunk"] for r in retrieved_reviews}
     
     # Collect cited IDs from the validated/filtered results
     for t in res_data.get("key_themes", []):
         for c in t.get("citations", []):
-            unique_cited_ids.add(str(c).strip())
+            norm_id = normalize_citation_id(c)
+            resolved_id = resolve_retrieved_citation_id(norm_id, retrieved_lookup)
+            unique_cited_ids.add(resolved_id)
             
     for b in res_data.get("barriers", []):
         for c in b.get("citations", []):
-            unique_cited_ids.add(str(c).strip())
+            norm_id = normalize_citation_id(c)
+            resolved_id = resolve_retrieved_citation_id(norm_id, retrieved_lookup)
+            unique_cited_ids.add(resolved_id)
             
     for p in res_data.get("persona_insights", []):
         for c in p.get("citations", []):
-            unique_cited_ids.add(str(c).strip())
+            norm_id = normalize_citation_id(c)
+            resolved_id = resolve_retrieved_citation_id(norm_id, retrieved_lookup)
+            unique_cited_ids.add(resolved_id)
 
     # Prevent hallucinated citations: intersect with retrieved IDs
     valid_cited_ids = unique_cited_ids.intersection(retrieved_ids)
@@ -494,7 +608,12 @@ def query_rag(request: QueryRequest) -> InsightResponse:
     themes = []
     for t in res_data.get("key_themes", []):
         # Only retain citations that are valid
-        valid_cits = [c for c in t.get("citations", []) if str(c).strip() in valid_cited_ids]
+        valid_cits = []
+        for c in t.get("citations", []):
+            norm_id = normalize_citation_id(c)
+            resolved_id = resolve_retrieved_citation_id(norm_id, retrieved_lookup)
+            if resolved_id in valid_cited_ids:
+                valid_cits.append(resolved_id)
         themes.append(Theme(
             name=t.get("name") or "Unnamed Theme",
             support_count=t.get("support_count") or len(valid_cits),
@@ -504,7 +623,12 @@ def query_rag(request: QueryRequest) -> InsightResponse:
         
     barriers = []
     for b in res_data.get("barriers", []):
-        valid_cits = [c for c in b.get("citations", []) if str(c).strip() in valid_cited_ids]
+        valid_cits = []
+        for c in b.get("citations", []):
+            norm_id = normalize_citation_id(c)
+            resolved_id = resolve_retrieved_citation_id(norm_id, retrieved_lookup)
+            if resolved_id in valid_cited_ids:
+                valid_cits.append(resolved_id)
         barriers.append(BarrierInsight(
             barrier=b.get("barrier") or "Unknown Barrier",
             count=b.get("count") or len(valid_cits),
@@ -513,7 +637,12 @@ def query_rag(request: QueryRequest) -> InsightResponse:
         
     personas = []
     for p in res_data.get("persona_insights", []):
-        valid_cits = [c for c in p.get("citations", []) if str(c).strip() in valid_cited_ids]
+        valid_cits = []
+        for c in p.get("citations", []):
+            norm_id = normalize_citation_id(c)
+            resolved_id = resolve_retrieved_citation_id(norm_id, retrieved_lookup)
+            if resolved_id in valid_cited_ids:
+                valid_cits.append(resolved_id)
         personas.append(PersonaInsight(
             persona=p.get("persona") or "Unknown Persona",
             behavior_summary=p.get("behavior_summary") or "",

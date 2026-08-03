@@ -13,6 +13,7 @@ import os
 import sqlite3
 import json
 import threading
+import hashlib
 from dotenv import load_dotenv
 from typing import List, Dict, Any, Optional
 
@@ -71,6 +72,32 @@ def _startup_sync_if_empty():
         print(f"[startup] System ready: SQLite contains {db_count} reviews, Chroma contains {vector_count} vectors. Skipping startup sync.")
 
 
+# Simple In-Memory Query Cache
+_query_cache = {}
+_cache_lock = threading.Lock()
+
+def get_cache_key(request: QueryRequest) -> str:
+    # Serialize filters and question into a stable string key
+    req_dict = {
+        "question": request.question.strip().lower(),
+        "filters": request.filters.model_dump(exclude_none=True) if request.filters else {}
+    }
+    return hashlib.sha256(json.dumps(req_dict, sort_keys=True).encode("utf-8")).hexdigest()
+
+def clear_query_cache():
+    with _cache_lock:
+        _query_cache.clear()
+        print("[cache] Query cache cleared.")
+
+def scheduled_sync_job():
+    try:
+        res = sync_worker.run_sync()
+        clear_query_cache()
+        print(f"[scheduler] Scheduled sync complete: {res}")
+    except Exception as e:
+        print(f"[scheduler] Scheduled sync failed: {e}")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """FastAPI lifespan: runs startup tasks before accepting requests."""
@@ -86,7 +113,7 @@ async def lifespan(app: FastAPI):
         from apscheduler.schedulers.background import BackgroundScheduler
         scheduler = BackgroundScheduler()
         scheduler.add_job(
-            func=sync_worker.run_sync,
+            func=scheduled_sync_job,
             trigger="interval",
             minutes=30,
             id="scheduled_sync",
@@ -183,6 +210,7 @@ def sync_sheet(req: Optional[SyncRequest] = None):
     try:
         sheet_id = req.spreadsheet_id if req else None
         res = sync_worker.run_sync(spreadsheet_id=sheet_id)
+        clear_query_cache()
         return res
     except Exception as e:
         raise HTTPException(
@@ -213,6 +241,7 @@ def rebuild_index(req: Optional[SyncRequest] = None):
         conn.close()
 
         res = sync_worker.run_sync(spreadsheet_id=sheet_id)
+        clear_query_cache()
         return {"ok": True, "rebuild": True, **res}
     except Exception as e:
         raise HTTPException(
@@ -266,8 +295,24 @@ def query_engine(request: QueryRequest):
     Retrieves top-10 relevant reviews, sends ONLY the retrieved snippets to Groq
     (never the full sheet dump), and returns grounded, citation-backed insights.
     Query is logged to data/query_log.jsonl for audit.
+    Supports in-memory caching to optimize response latency.
     """
-    return rag_engine.query_rag(request)
+    cache_key = get_cache_key(request)
+    with _cache_lock:
+        if cache_key in _query_cache:
+            print(f"[cache] Returning cached response for: {request.question}")
+            return _query_cache[cache_key]
+
+    res = rag_engine.query_rag(request)
+
+    with _cache_lock:
+        # Prevent cache bloat: cap at 100 entries, evicting the oldest entry if full
+        if len(_query_cache) >= 100:
+            oldest_key = next(iter(_query_cache))
+            del _query_cache[oldest_key]
+        _query_cache[cache_key] = res
+
+    return res
 
 
 @app.get("/filters")

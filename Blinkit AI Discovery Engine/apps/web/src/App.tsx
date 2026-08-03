@@ -823,7 +823,7 @@ function App() {
                   <li>✓ Reddit</li>
                 </ul>
                 <div className="step-output">
-                  <span>Output:</span> <strong>382 Reviews Collected</strong>
+                  <span>Output:</span> <strong>{dbStats ? dbStats.total_reviews.toLocaleString() : "1,161"} Reviews Collected</strong>
                 </div>
               </div>
 
